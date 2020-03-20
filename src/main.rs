@@ -1,5 +1,12 @@
-use ggez::{graphics, Context, ContextBuilder, GameResult};
 use ggez::event::{self, EventHandler};
+use ggez::{graphics, Context, ContextBuilder, GameResult};
+use specs::{join::Join, ReadStorage};
+
+mod assets;
+use assets::*;
+
+mod components;
+use components::*;
 
 // Define usual 2d data structs.
 pub type Point2 = ggez::nalgebra::Point2<f32>;
@@ -30,16 +37,16 @@ fn main() {
             max_height: 810.0,
             resizable: false,
         })
-        .add_resource_path("resources/")
+        .add_resource_path("resources")
         .build()
-		.expect("aieee, could not create ggez context!");
+        .expect("aieee, could not create ggez context!");
 
-    let mut game = TopGun::new();
+    let mut game = TopGun::new(&mut ctx);
 
     // Run!
     match event::run(&mut ctx, &mut event_loop, &mut game) {
         Ok(_) => println!("Exited cleanly."),
-        Err(e) => println!("Error occured: {}", e)
+        Err(e) => println!("Error occured: {}", e),
     }
 }
 
@@ -48,10 +55,32 @@ struct TopGun<'a, 'b> {
 }
 
 impl<'a, 'b> TopGun<'a, 'b> {
-    pub fn new() -> TopGun<'a, 'b> {
+    pub fn new(ctx: &mut Context) -> TopGun<'a, 'b> {
+        let assets = Assets::load_assets(ctx);
         TopGun {
-            game: Game::new(),
+            game: Game::new(assets),
         }
+    }
+
+    pub fn update_view_matrix(&mut self, ctx: &mut Context) {
+        let window_size = graphics::size(ctx);
+        let view_matrix = Matrix4::new_translation(&ggez::nalgebra::Vector3::new(
+            window_size.0 as f32 * 0.5,
+            window_size.1 as f32 * 0.5,
+            0.0,
+        )) * Matrix4::new_nonuniform_scaling(&ggez::nalgebra::Vector3::new(
+            window_size.1 as f32 * 0.5,
+            window_size.1 as f32 * 0.5,
+            1.0,
+        ));
+
+        let origin = Point2::origin();
+        let world_to_screen = view_matrix
+            * Matrix4::new_nonuniform_scaling(&ggez::nalgebra::Vector3::new(0.1, -0.1, 1.0))
+            * Matrix4::new_translation(&ggez::nalgebra::Vector3::new(-origin.x, -origin.y, 0.0));
+
+        graphics::set_transform(ctx, world_to_screen);
+        graphics::apply_transformations(ctx).unwrap();
     }
 }
 
@@ -62,7 +91,25 @@ impl<'a, 'b> EventHandler for TopGun<'a, 'b> {
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::clear(ctx, graphics::BLACK);
-        // Draw code here...
+        self.update_view_matrix(ctx);
+
+        // Render all sprite objects
+        let (sprites, transforms): (ReadStorage<Sprite>, ReadStorage<Transform>) =
+            self.game.world.system_data();
+        for (sprite, transform) in (&sprites, &transforms).join() {
+            let image = &self.game.assets.sprites[&sprite.sprite];
+            let p = graphics::DrawParam::new()
+                .dest(Point2::new(
+                    transform.position.x - sprite.size.x * 0.5,
+                    transform.position.y - sprite.size.y * 0.5,
+                ))
+                .scale(Vector2::new(
+                    sprite.size.x / image.width() as f32,
+                    sprite.size.y / image.height() as f32,
+                ))
+                .color([1.0, 1.0, 1.0, 1.0].into());
+            graphics::draw(ctx, image, p)?;
+        }
         graphics::present(ctx)
     }
 }
