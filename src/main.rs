@@ -1,9 +1,12 @@
-use std::collections::hash_map::HashMap;
-use ggez::{graphics, Context, ContextBuilder, GameResult};
 use ggez::event::{self, EventHandler};
-use specs::{ReadStorage, join::Join};
+use ggez::{graphics, Context, ContextBuilder, GameResult};
+use specs::{join::Join, ReadStorage};
+
+mod assets;
+use assets::*;
 
 mod components;
+use components::*;
 
 // Define usual 2d data structs.
 pub type Point2 = ggez::nalgebra::Point2<f32>;
@@ -36,33 +39,25 @@ fn main() {
         })
         .add_resource_path("resources")
         .build()
-		.expect("aieee, could not create ggez context!");
+        .expect("aieee, could not create ggez context!");
 
     let mut game = TopGun::new(&mut ctx);
 
     // Run!
     match event::run(&mut ctx, &mut event_loop, &mut game) {
         Ok(_) => println!("Exited cleanly."),
-        Err(e) => println!("Error occured: {}", e)
+        Err(e) => println!("Error occured: {}", e),
     }
 }
 
 struct TopGun<'a, 'b> {
     pub game: Game<'a, 'b>,
-    pub sprites: HashMap<&'a str, graphics::Image>,
 }
 
 impl<'a, 'b> TopGun<'a, 'b> {
     pub fn new(ctx: &mut Context) -> TopGun<'a, 'b> {
-        let sprite = "/sprites/defense_sphere.png";
-        let test_sprite = graphics::Image::new(ctx, sprite).unwrap();
-        let mut sprites = HashMap::<& str, graphics::Image>::new();
-        sprites.insert(sprite, test_sprite);
-
-        TopGun {
-            game: Game::new(),
-            sprites: sprites,
-        }
+        let assets = Assets::load_assets(ctx);
+        TopGun { game: Game::new(assets) }
     }
 
     pub fn update_view_matrix(&mut self, ctx: &mut Context) {
@@ -97,23 +92,31 @@ impl<'a, 'b> EventHandler for TopGun<'a, 'b> {
         self.update_view_matrix(ctx);
 
         // Render all sprite objects
-        let (sprites, transforms): (ReadStorage<components::Sprite>, ReadStorage<components::Transform>) = self.game.world.system_data();
+        let (sprites, transforms): (ReadStorage<Sprite>, ReadStorage<Transform>) =
+            self.game.world.system_data();
         for (sprite, transform) in (&sprites, &transforms).join() {
+            let image = &self.game.assets.sprites[&sprite.sprite];
             let p = graphics::DrawParam::new()
                 .dest(Point2::new(
                     transform.position.x - sprite.size.x * 0.5,
                     transform.position.y - sprite.size.y * 0.5,
                 ))
+                .scale(Vector2::new(
+                    1.0 / image.width() as f32,
+                    1.0 / image.height() as f32,
+                ))
                 .color([1.0, 1.0, 1.0, 1.0].into());
-
-            let rectangle = graphics::Mesh::new_rectangle(
-                ctx,
-                graphics::DrawMode::fill(),
-                graphics::Rect::new(0.0, 0.0, sprite.size.x, sprite.size.y),
-                [1.0, 1.0, 1.0, 1.0].into(),
-            )?;
-            graphics::draw(ctx, &rectangle, p)?;
+            graphics::draw(ctx, image, p)?;
         }
+
+        let rectangle = graphics::Mesh::new_rectangle(
+            ctx,
+            graphics::DrawMode::fill(),
+            graphics::Rect::new(0.0, 0.0, 1.0, 1.0),
+            [1.0, 1.0, 1.0, 1.0].into(),
+        )?;
+
+        graphics::draw(ctx, &rectangle, (Point2::new(5.0, 5.0),))?;
 
         graphics::present(ctx)
     }

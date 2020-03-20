@@ -1,16 +1,16 @@
-use components::*;
 use super::*;
 use specs::*;
+use assets::*;
 
 pub struct Game<'a, 'b> {
     pub world: World,
     pub dispatcher: Dispatcher<'a, 'b>,
+    pub assets: Assets,
 }
 
 impl<'a, 'b> Game<'a, 'b> {
-    pub fn new() -> Game<'a, 'b> {
+    pub fn new(assets: Assets) -> Game<'a, 'b> {
         // use this to initalize the game struct.
-
         let mut world = World::new();
 
         world.register::<Transform>();
@@ -23,7 +23,7 @@ impl<'a, 'b> Game<'a, 'b> {
         })
         .with(Sprite {
             size: Vector2::new(1.0, 1.0),
-            sprite: "defense_sphere".to_owned(),
+            sprite: SpriteType::Defense,
         })
         .build();
 
@@ -32,6 +32,7 @@ impl<'a, 'b> Game<'a, 'b> {
         Game {
             world: world,
             dispatcher: dispatcher,
+            assets: assets,
         }
     }
 

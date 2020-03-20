@@ -10,5 +10,5 @@ pub struct Transform {
 #[derive(Component)]
 pub struct Sprite {
     pub size: Vector2,
-    pub sprite: String,
+    pub sprite: SpriteType,
 }
