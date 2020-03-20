@@ -1,6 +1,5 @@
 use specs::*;
 
-
 pub struct Game<'a, 'b> {
     pub world: World,
     pub dispatcher: Dispatcher<'a, 'b>,
