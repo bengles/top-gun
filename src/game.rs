@@ -10,7 +10,9 @@ impl<'a, 'b> Game<'a, 'b> {
         // use this to initalize the game struct.
 
         let world = World::new();
-        let dispatcher = DispatcherBuilder::new().build();
+        let dispatcher = DispatcherBuilder::new()
+            .with(PhysicsSystem, "physics_system", &[])
+            .build();
         Game {
             world: world,
             dispatcher: dispatcher,
