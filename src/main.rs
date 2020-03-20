@@ -114,7 +114,7 @@ impl<'a, 'b> TopGun<'a, 'b> {
 
 impl<'a, 'b> EventHandler for TopGun<'a, 'b> {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
-        self.input.dt = ggez::timer::delta(ctx).as_secs_f64();
+        self.input.dt = ggez::timer::delta(ctx).as_secs_f32();
         self.game.input = self.input.clone();
         self.game.update();
         self.input.reset();

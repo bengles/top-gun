@@ -31,12 +31,17 @@ impl<'a, 'b> Game<'a, 'b> {
                 sprite: SpriteType::Defense,
             })
             .with(RigidBody{
-                velocity: Vector2::new(0.0, 0.0),
+                velocity: Vector2::new(1.0, 0.0),
                 spin: 0.0,
+            })
+            .with(Collider{
+                collider_type: ColliderType::Sphere,
+                radius: 0.0,
+                size: Vector2::new(0.0, 0.0),
+                is_trigger: false,
             })
             .build();
 
-        let world = World::new();
         let dispatcher = DispatcherBuilder::new()
             .with(PhysicsSystem, "physics_system", &[])
             .build();

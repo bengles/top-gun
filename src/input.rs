@@ -7,7 +7,7 @@ pub struct Input {
     pub keys_down: HashMap<Key, bool>,
     pub keys_up: HashMap<Key, bool>,
     pub mouse_position: Vector2,
-    pub dt: f64,
+    pub dt: f32,
 }
 
 impl Input {
