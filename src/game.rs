@@ -1,6 +1,5 @@
 use super::*;
 use specs::*;
-use assets::*;
 
 pub struct Game<'a, 'b> {
     pub world: World,
@@ -16,16 +15,17 @@ impl<'a, 'b> Game<'a, 'b> {
         world.register::<Transform>();
         world.register::<Sprite>();
 
-        world.create_entity()
-        .with(Transform {
-            position: Vector2::new(0.0, 0.0),
-            rotation: 0.0
-        })
-        .with(Sprite {
-            size: Vector2::new(1.0, 1.0),
-            sprite: SpriteType::Defense,
-        })
-        .build();
+        world
+            .create_entity()
+            .with(Transform {
+                position: Vector2::new(0.0, 0.0),
+                rotation: 0.0,
+            })
+            .with(Sprite {
+                size: Vector2::new(1.0, 1.0),
+                sprite: SpriteType::Defense,
+            })
+            .build();
 
         let dispatcher = DispatcherBuilder::new().build();
 

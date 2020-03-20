@@ -57,7 +57,9 @@ struct TopGun<'a, 'b> {
 impl<'a, 'b> TopGun<'a, 'b> {
     pub fn new(ctx: &mut Context) -> TopGun<'a, 'b> {
         let assets = Assets::load_assets(ctx);
-        TopGun { game: Game::new(assets) }
+        TopGun {
+            game: Game::new(assets),
+        }
     }
 
     pub fn update_view_matrix(&mut self, ctx: &mut Context) {
@@ -102,22 +104,12 @@ impl<'a, 'b> EventHandler for TopGun<'a, 'b> {
                     transform.position.y - sprite.size.y * 0.5,
                 ))
                 .scale(Vector2::new(
-                    1.0 / image.width() as f32,
-                    1.0 / image.height() as f32,
+                    sprite.size.x / image.width() as f32,
+                    sprite.size.y / image.height() as f32,
                 ))
                 .color([1.0, 1.0, 1.0, 1.0].into());
             graphics::draw(ctx, image, p)?;
         }
-
-        let rectangle = graphics::Mesh::new_rectangle(
-            ctx,
-            graphics::DrawMode::fill(),
-            graphics::Rect::new(0.0, 0.0, 1.0, 1.0),
-            [1.0, 1.0, 1.0, 1.0].into(),
-        )?;
-
-        graphics::draw(ctx, &rectangle, (Point2::new(5.0, 5.0),))?;
-
         graphics::present(ctx)
     }
 }
