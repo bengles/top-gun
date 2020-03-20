@@ -9,10 +9,12 @@ mod assets;
 mod components;
 mod input;
 mod physics_system;
+mod input_to_player_action_system;
 
 use assets::*;
 use components::*;
 use input::*;
+use input_to_player_action_system::*;
 
 // Define usual 2d data structs.
 pub type Point2 = ggez::nalgebra::Point2<f32>;
@@ -191,7 +193,8 @@ impl<'a, 'b> EventHandler for TopGun<'a, 'b> {
     fn key_up_event(&mut self, _ctx: &mut Context, keycode: KeyCode, _keymods: KeyMods) {
         let optional_key = self.keycode_to_key(keycode);
         if let Some(key) = optional_key {
-            self.input.keys_up.insert(key, true);
+            self.input.keys_up.insert(key.clone(), true);
+            self.input.keys_pressed.insert(key, false);
         }
     }
 }

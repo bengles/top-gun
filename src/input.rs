@@ -62,13 +62,6 @@ impl Input {
         self.keys_up.insert(Key::Space, false);
         self.keys_up.insert(Key::Mouse1, false);
         self.keys_up.insert(Key::Mouse2, false);
-
-        self.keys_pressed.insert(Key::W, false);
-        self.keys_pressed.insert(Key::A, false);
-        self.keys_pressed.insert(Key::S, false);
-        self.keys_pressed.insert(Key::D, false);
-        self.keys_pressed.insert(Key::Space, false);
-
         // do not reset mouse.
     }
 }
