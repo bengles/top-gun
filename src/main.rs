@@ -8,10 +8,12 @@ use specs::{join::Join, ReadStorage};
 mod assets;
 mod components;
 mod input;
+mod input_to_player_action_system;
 
 use assets::*;
 use components::*;
 use input::*;
+use input_to_player_action_system::*;
 
 // Define usual 2d data structs.
 pub type Point2 = ggez::nalgebra::Point2<f32>;

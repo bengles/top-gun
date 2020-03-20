@@ -15,6 +15,19 @@ impl<'a, 'b> Game<'a, 'b> {
 
         world.register::<Transform>();
         world.register::<Sprite>();
+        world.register::<PlayerActionMap>();
+
+        world
+            .create_entity()
+            .with(Transform {
+                position: Vector2::new(0.0, 0.0),
+                rotation: 0.0,
+            })
+            .with(Sprite {
+                size: Vector2::new(16.0, 9.0) * 2.2,
+                sprite: SpriteType::Background,
+            })
+            .build();
 
         world
             .create_entity()
@@ -28,7 +41,9 @@ impl<'a, 'b> Game<'a, 'b> {
             })
             .build();
 
-        let dispatcher = DispatcherBuilder::new().build();
+        let dispatcher = DispatcherBuilder::new()
+        .with(InputToPlayerActionSystem, "input_to_player_action_system", &[])
+        .build();
 
         Game {
             world: world,
