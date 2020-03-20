@@ -11,7 +11,27 @@ use game::*;
 
 fn main() {
     let (mut ctx, mut event_loop) = ContextBuilder::new("my_game", "Cool Game Author")
-		.build()
+        .window_setup(ggez::conf::WindowSetup {
+            title: "Top Gun".to_owned(),
+            samples: ggez::conf::NumSamples::Zero,
+            vsync: false,
+            icon: "".to_owned(),
+            srgb: true,
+        })
+        .window_mode(ggez::conf::WindowMode {
+            width: 1440.0,
+            height: 810.0,
+            maximized: false,
+            fullscreen_type: ggez::conf::FullscreenType::Windowed,
+            borderless: false,
+            min_width: 1440.0,
+            max_width: 1440.0,
+            min_height: 810.0,
+            max_height: 810.0,
+            resizable: false,
+        })
+        .add_resource_path("resources/")
+        .build()
 		.expect("aieee, could not create ggez context!");
 
     let mut game = TopGun::new();
