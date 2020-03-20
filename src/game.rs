@@ -39,11 +39,20 @@ impl<'a, 'b> Game<'a, 'b> {
                 size: Vector2::new(1.0, 1.0),
                 sprite: SpriteType::Defense,
             })
+            .with(PlayerActionMap {
+                shoot: false,
+                desired_move_direction: Vector2::zeros(),
+                desired_heading_direction: Vector2::zeros(),
+            })
             .build();
 
         let dispatcher = DispatcherBuilder::new()
-        .with(InputToPlayerActionSystem, "input_to_player_action_system", &[])
-        .build();
+            .with(
+                InputToPlayerActionSystem,
+                "input_to_player_action_system",
+                &[],
+            )
+            .build();
 
         Game {
             world: world,

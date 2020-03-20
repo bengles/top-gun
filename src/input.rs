@@ -7,7 +7,7 @@ pub struct Input {
     pub keys_down: HashMap<Key, bool>,
     pub keys_up: HashMap<Key, bool>,
     pub mouse_position: Vector2,
-    pub dt: f64,
+    pub dt: f32,
 }
 
 impl Input {
@@ -62,13 +62,6 @@ impl Input {
         self.keys_up.insert(Key::Space, false);
         self.keys_up.insert(Key::Mouse1, false);
         self.keys_up.insert(Key::Mouse2, false);
-
-        self.keys_pressed.insert(Key::W, false);
-        self.keys_pressed.insert(Key::A, false);
-        self.keys_pressed.insert(Key::S, false);
-        self.keys_pressed.insert(Key::D, false);
-        self.keys_pressed.insert(Key::Space, false);
-
         // do not reset mouse.
     }
 }

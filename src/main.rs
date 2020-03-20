@@ -115,7 +115,7 @@ impl<'a, 'b> TopGun<'a, 'b> {
 
 impl<'a, 'b> EventHandler for TopGun<'a, 'b> {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
-        self.input.dt = ggez::timer::delta(ctx).as_secs_f64();
+        self.input.dt = ggez::timer::delta(ctx).as_secs_f32();
         self.game.input = self.input.clone();
         self.game.update();
         self.input.reset();
@@ -192,7 +192,8 @@ impl<'a, 'b> EventHandler for TopGun<'a, 'b> {
     fn key_up_event(&mut self, _ctx: &mut Context, keycode: KeyCode, _keymods: KeyMods) {
         let optional_key = self.keycode_to_key(keycode);
         if let Some(key) = optional_key {
-            self.input.keys_up.insert(key, true);
+            self.input.keys_up.insert(key.clone(), true);
+            self.input.keys_pressed.insert(key, false);
         }
     }
 }
