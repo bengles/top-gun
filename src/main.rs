@@ -8,6 +8,7 @@ use specs::{join::Join, ReadStorage};
 mod assets;
 mod components;
 mod input;
+mod physics_system;
 mod input_to_player_action_system;
 mod player_action_system;
 

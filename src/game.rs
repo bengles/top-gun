@@ -1,6 +1,8 @@
 use super::*;
 use specs::*;
 
+use physics_system::*;
+
 pub struct Game<'a, 'b> {
     pub world: World,
     pub dispatcher: Dispatcher<'a, 'b>,
@@ -14,6 +16,8 @@ impl<'a, 'b> Game<'a, 'b> {
         let mut world = World::new();
 
         world.register::<Transform>();
+        world.register::<RigidBody>();
+        world.register::<Collider>();
         world.register::<Sprite>();
         world.register::<PlayerActionMap>();
 
@@ -39,6 +43,16 @@ impl<'a, 'b> Game<'a, 'b> {
                 size: Vector2::new(1.0, 1.0),
                 sprite: SpriteType::Defense,
             })
+            .with(RigidBody{
+                velocity: Vector2::new(1.0, 0.0),
+                spin: 0.0,
+            })
+            .with(Collider{
+                collider_type: ColliderType::Sphere,
+                radius: 0.0,
+                size: Vector2::new(0.0, 0.0),
+                is_trigger: false,
+            })
             .with(PlayerActionMap {
                 shoot: false,
                 desired_move_direction: Vector2::zeros(),
@@ -47,6 +61,7 @@ impl<'a, 'b> Game<'a, 'b> {
             .build();
 
         let dispatcher = DispatcherBuilder::new()
+            .with(PhysicsSystem, "physics_system", &[])
             .with(
                 InputToPlayerActionSystem,
                 "input_to_player_action_system",
