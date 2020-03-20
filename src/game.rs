@@ -16,6 +16,8 @@ impl<'a, 'b> Game<'a, 'b> {
         let mut world = World::new();
 
         world.register::<Transform>();
+        world.register::<RigidBody>();
+        world.register::<Collider>();
         world.register::<Sprite>();
 
         world
@@ -27,6 +29,10 @@ impl<'a, 'b> Game<'a, 'b> {
             .with(Sprite {
                 size: Vector2::new(1.0, 1.0),
                 sprite: SpriteType::Defense,
+            })
+            .with(RigidBody{
+                velocity: Vector2::new(0.0, 0.0),
+                spin: 0.0,
             })
             .build();
 
