@@ -23,6 +23,9 @@ impl<'a, 'b> Game<'a, 'b> {
         world.register::<Bullet>();
         world.register::<MuzzleFlash>();
 
+        let collision_pairs: CollisionPairs = CollisionPairs { pairs: vec![] };
+        world.insert(collision_pairs);
+
         world
             .create_entity()
             .with(Transform {
@@ -55,7 +58,7 @@ impl<'a, 'b> Game<'a, 'b> {
             })
             .with(Collider {
                 collider_type: ColliderType::Sphere,
-                radius: 0.0,
+                radius: 0.5,
                 size: Vector2::new(0.0, 0.0),
                 is_trigger: false,
             })
@@ -64,6 +67,30 @@ impl<'a, 'b> Game<'a, 'b> {
                 desired_move_direction: Vector2::zeros(),
                 desired_heading_direction: Vector2::zeros(),
                 shoot_cooldown: 0.0,
+            })
+            .build();
+
+        world
+            .create_entity()
+            .with(Transform {
+                position: Vector2::new(0.0, 5.0),
+                rotation: 0.0,
+                parent: None,
+            })
+            .with(Sprite {
+                size: Vector2::new(1.0, 1.0),
+                sprite: SpriteType::Defense,
+                layer: 2,
+            })
+            .with(RigidBody {
+                velocity: Vector2::new(0.0, 0.0),
+                spin: 0.0,
+            })
+            .with(Collider {
+                collider_type: ColliderType::Sphere,
+                radius: 0.5,
+                size: Vector2::new(0.0, 0.0),
+                is_trigger: false,
             })
             .build();
 
