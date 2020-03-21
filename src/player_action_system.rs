@@ -5,6 +5,7 @@ pub struct PlayerActionSystem;
 
 impl PlayerActionSystem {
     pub const MOVE_SPEED: f32 = 5.0;
+    pub const FIRE_RATE: f32 = 0.2;
 }
 
 impl<'a> System<'a> for PlayerActionSystem {
@@ -20,8 +21,8 @@ impl<'a> System<'a> for PlayerActionSystem {
         &mut self,
         (action_maps, mut transforms, mut rigidbodies, entities, updater): Self::SystemData,
     ) {
-        for (action_map, transform, rigidbody) in
-            (&action_maps, &mut transforms, &mut rigidbodies).join()
+        for (action_map, transform, rigidbody, entity) in
+            (&action_maps, &mut transforms, &mut rigidbodies, &entities).join()
         {
             rigidbody.velocity = action_map.desired_move_direction * PlayerActionSystem::MOVE_SPEED;
             let heading = action_map.desired_heading_direction;
@@ -35,6 +36,7 @@ impl<'a> System<'a> for PlayerActionSystem {
                         Transform {
                             position: transform.position + heading,
                             rotation: transform.rotation,
+                            parent: None,
                         },
                     );
                     updater.insert(
@@ -65,12 +67,13 @@ impl<'a> System<'a> for PlayerActionSystem {
                 }
                 let muzzle_flash = entities.create();
                 {
-                    updater.insert(muzzle_flash, MuzzleFlash { time_to_live: 0.01 });
+                    updater.insert(muzzle_flash, MuzzleFlash { time_to_live: 0.1 });
                     updater.insert(
                         muzzle_flash,
                         Transform {
-                            position: transform.position + 1.5 * heading * 0.9,
-                            rotation: transform.rotation,
+                            position: Vector2::new(0.0, -1.25),
+                            rotation: 0.0,
+                            parent: Some(entity),
                         },
                     );
                     updater.insert(

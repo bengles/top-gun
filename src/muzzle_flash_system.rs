@@ -7,7 +7,7 @@ impl<'a> System<'a> for MuzzleFlashSystem {
     type SystemData = (
         WriteStorage<'a, MuzzleFlash>,
         Entities<'a>,
-        ReadExpect<'a, Input>
+        ReadExpect<'a, Input>,
     );
 
     fn run(&mut self, (mut flashes, entities, input): Self::SystemData) {
