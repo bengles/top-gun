@@ -13,7 +13,7 @@ impl<'a> System<'a> for InputToPlayerActionSystem {
     fn run(&mut self, (input, transforms, mut player_action_maps): Self::SystemData) {
         for (transform, player_action_map) in (&transforms, &mut player_action_maps).join() {
             player_action_map.shoot = input.keys_pressed[&Key::Mouse1];
-
+            
             let mut move_direction: Vector2 = Vector2::zeros();
             if input.keys_pressed[&Key::W] {
                 move_direction.y = 1.0;

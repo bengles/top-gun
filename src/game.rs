@@ -84,5 +84,6 @@ impl<'a, 'b> Game<'a, 'b> {
         // update loop of the game.
         self.world.insert(self.input.clone());
         self.dispatcher.run_now(&self.world);
+        self.world.maintain();
     }
 }

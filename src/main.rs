@@ -165,11 +165,23 @@ impl<'a, 'b> EventHandler for TopGun<'a, 'b> {
             MouseButton::Right => self.input.keys_down.insert(Key::Mouse2, true),
             _ => None,
         };
+
+        match button {
+            MouseButton::Left => self.input.keys_pressed.insert(Key::Mouse1, true),
+            MouseButton::Right => self.input.keys_pressed.insert(Key::Mouse2, true),
+            _ => None,
+        };
     }
     fn mouse_button_up_event(&mut self, _ctx: &mut Context, button: MouseButton, _x: f32, _y: f32) {
         match button {
             MouseButton::Left => self.input.keys_up.insert(Key::Mouse1, true),
             MouseButton::Right => self.input.keys_up.insert(Key::Mouse2, true),
+            _ => None,
+        };
+
+        match button {
+            MouseButton::Left => self.input.keys_pressed.insert(Key::Mouse1, false),
+            MouseButton::Right => self.input.keys_pressed.insert(Key::Mouse2, false),
             _ => None,
         };
     }
