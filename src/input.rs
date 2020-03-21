@@ -8,6 +8,7 @@ pub struct Input {
     pub keys_up: HashMap<Key, bool>,
     pub mouse_position: Vector2,
     pub dt: f32,
+    pub world_size: Vector2,
 }
 
 impl Default for Input {
@@ -44,6 +45,7 @@ impl Default for Input {
             keys_up: keys_up,
             mouse_position: Vector2::zeros(),
             dt: 0.0,
+            world_size: Vector2::zeros(),
         }
     }
 }

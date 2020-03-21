@@ -60,6 +60,7 @@ impl<'a> System<'a> for PlayerActionSystem {
                             size: Vector2::zeros(),
                         },
                     );
+                    updater.insert(bullet, Bullet {});
                 }
             }
         }
