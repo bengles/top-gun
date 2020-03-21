@@ -6,6 +6,7 @@ use ggez::{graphics, Context, ContextBuilder, GameResult};
 use specs::{join::Join, ReadStorage};
 
 mod assets;
+mod bullet_system;
 mod components;
 mod input;
 mod input_to_player_action_system;
@@ -14,6 +15,7 @@ mod player_action_system;
 mod utils;
 
 use assets::*;
+use bullet_system::*;
 use components::*;
 use input::*;
 use input_to_player_action_system::*;
@@ -121,6 +123,9 @@ impl<'a, 'b> TopGun<'a, 'b> {
 impl<'a, 'b> EventHandler for TopGun<'a, 'b> {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
         self.input.dt = ggez::timer::delta(ctx).as_secs_f32();
+        let screen_size = graphics::size(ctx);
+        let world_size = self.screen_to_world(Vector2::new(screen_size.0, screen_size.1));
+        self.input.world_size = world_size;
         self.game.input = self.input.clone();
         self.game.update();
         self.input.reset();

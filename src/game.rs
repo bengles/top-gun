@@ -20,6 +20,7 @@ impl<'a, 'b> Game<'a, 'b> {
         world.register::<Collider>();
         world.register::<Sprite>();
         world.register::<PlayerActionMap>();
+        world.register::<Bullet>();
 
         world
             .create_entity()
@@ -68,6 +69,7 @@ impl<'a, 'b> Game<'a, 'b> {
                 &[],
             )
             .with(PlayerActionSystem, "player_action_system", &[])
+            .with(BulletSystem, "bullet_system", &[])
             .build();
 
         Game {

@@ -38,3 +38,6 @@ pub struct PlayerActionMap {
     pub desired_move_direction: Vector2,
     pub desired_heading_direction: Vector2,
 }
+
+#[derive(Component)]
+pub struct Bullet;
