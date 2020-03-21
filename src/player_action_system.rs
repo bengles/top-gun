@@ -62,6 +62,24 @@ impl<'a> System<'a> for PlayerActionSystem {
                     );
                     updater.insert(bullet, Bullet {});
                 }
+                let muzzle_flash = entities.create();
+                {
+                    updater.insert(muzzle_flash, MuzzleFlash { time_to_live: 0.01 });
+                    updater.insert(
+                        muzzle_flash,
+                        Transform {
+                            position: transform.position + 1.5 * heading * 0.9,
+                            rotation: transform.rotation,
+                        },
+                    );
+                    updater.insert(
+                        muzzle_flash,
+                        Sprite {
+                            sprite: SpriteType::MuzzleFlash,
+                            size: Vector2::new(2.0, 2.0),
+                        },
+                    );
+                }
             }
         }
     }

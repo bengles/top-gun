@@ -21,6 +21,7 @@ impl<'a, 'b> Game<'a, 'b> {
         world.register::<Sprite>();
         world.register::<PlayerActionMap>();
         world.register::<Bullet>();
+        world.register::<MuzzleFlash>();
 
         world
             .create_entity()
@@ -70,6 +71,7 @@ impl<'a, 'b> Game<'a, 'b> {
             )
             .with(PlayerActionSystem, "player_action_system", &[])
             .with(BulletSystem, "bullet_system", &[])
+            .with(MuzzleFlashSystem, "muzzle_flash_system", &[])
             .build();
 
         Game {

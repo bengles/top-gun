@@ -10,6 +10,7 @@ mod bullet_system;
 mod components;
 mod input;
 mod input_to_player_action_system;
+mod muzzle_flash_system;
 mod physics_system;
 mod player_action_system;
 mod utils;
@@ -19,6 +20,7 @@ use bullet_system::*;
 use components::*;
 use input::*;
 use input_to_player_action_system::*;
+use muzzle_flash_system::*;
 use player_action_system::*;
 use utils::*;
 

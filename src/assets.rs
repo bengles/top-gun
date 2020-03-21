@@ -29,6 +29,10 @@ impl Assets {
             SpriteType::Bullet,
             Image::new(ctx, "/sprites/bullet.png").unwrap(),
         );
+        sprites.insert(
+            SpriteType::MuzzleFlash,
+            Image::new(ctx, "/sprites/muzzle_flash.png").unwrap(),
+        );
         Assets { sprites: sprites }
     }
 }
@@ -40,4 +44,5 @@ pub enum SpriteType {
     Player1,
     Player2,
     Bullet,
+    MuzzleFlash,
 }
