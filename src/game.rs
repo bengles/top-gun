@@ -25,22 +25,25 @@ impl<'a, 'b> Game<'a, 'b> {
         world.register::<RigidBody>();
         world.register::<Collider>();
         world.register::<Sprite>();
-        world.register::<PlayerActionMap>();
+        world.register::<MarineActionMap>();
         world.register::<Bullet>();
         world.register::<MuzzleFlash>();
         world.register::<Scroll>();
+        world.register::<Player>();
+        world.register::<AI>();
 
         let dispatcher = DispatcherBuilder::new()
             .with(PhysicsSystem, "physics_system", &[])
             .with(
-                InputToPlayerActionSystem,
-                "input_to_player_action_system",
+                InputToMarineActionSystem,
+                "input_to_marine_action_system",
                 &[],
             )
-            .with(PlayerActionSystem, "player_action_system", &[])
+            .with(MartineActionSystem, "player_action_system", &[])
             .with(BulletSystem, "bullet_system", &[])
             .with(MuzzleFlashSystem, "muzzle_flash_system", &[])
             .with(ScrollSystem, "scroll_system", &[])
+            .with(AiMarineActionSystem, "ai_marine_action_system", &[])
             .build();
 
         Game {
@@ -66,6 +69,7 @@ impl<'a, 'b> Game<'a, 'b> {
 
 impl Game<'_, '_> {
     pub fn init(&mut self) {
+        // Water
         let water_size = Vector2::new(16.0, 9.0) * 2.2;
         for i in 0..2 {
             self.world
@@ -94,6 +98,7 @@ impl Game<'_, '_> {
                 .build();
         }
 
+        // Background
         self.world
             .create_entity()
             .with(Transform {
@@ -108,6 +113,7 @@ impl Game<'_, '_> {
             })
             .build();
 
+        // Player
         self.world
             .create_entity()
             .with(Transform {
@@ -130,12 +136,49 @@ impl Game<'_, '_> {
                 size: Vector2::new(0.0, 0.0),
                 is_trigger: false,
             })
-            .with(PlayerActionMap {
+            .with(MarineActionMap {
                 shoot: false,
                 desired_move_direction: Vector2::zeros(),
                 desired_heading_direction: Vector2::zeros(),
                 shoot_cooldown: 0.0,
+                fire_rate_modifier: 1.0,
+                speed_modifier: 1.0,
             })
+            .with(Player {})
+            .build();
+
+        // Enemy
+        self.world
+            .create_entity()
+            .with(Transform {
+                position: Vector2::new(5.0, 0.0),
+                rotation: 0.0,
+                parent: None,
+            })
+            .with(Sprite {
+                size: Vector2::new(1.0, 1.0),
+                sprite: SpriteType::Player2,
+                layer: 5,
+            })
+            .with(RigidBody {
+                velocity: Vector2::new(0.0, 0.0),
+                spin: 0.0,
+            })
+            .with(Collider {
+                collider_type: ColliderType::Sphere,
+                radius: 0.5,
+                size: Vector2::new(0.0, 0.0),
+                is_trigger: false,
+            })
+            .with(MarineActionMap {
+                shoot: false,
+                desired_move_direction: Vector2::new(0.0, 0.0),
+                desired_heading_direction: Vector2::new(-1.0, 0.0),
+                shoot_cooldown: 0.0,
+                fire_rate_modifier: 1.0,
+                speed_modifier: 1.0,
+            })
+            .with(AI {})
             .build();
 
         self.world
