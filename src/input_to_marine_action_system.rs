@@ -1,24 +1,22 @@
 use super::*;
 use specs::prelude::*;
 
-pub struct InputToPlayerActionSystem;
+pub struct InputToMarineActionSystem;
 
-impl<'a> System<'a> for InputToPlayerActionSystem {
+impl<'a> System<'a> for InputToMarineActionSystem {
     type SystemData = (
-        ReadExpect<'a, Input>,
+        ReadStorage<'a, Player>,
         ReadStorage<'a, Transform>,
-        WriteStorage<'a, PlayerActionMap>,
+        WriteStorage<'a, MarineActionMap>,
+        ReadExpect<'a, Input>,
     );
 
-    fn run(&mut self, (input, transforms, mut player_action_maps): Self::SystemData) {
-        for (transform, player_action_map) in (&transforms, &mut player_action_maps).join() {
-            player_action_map.shoot_cooldown -= input.dt;
-            player_action_map.shoot =
-                input.keys_pressed[&Key::Mouse1] && player_action_map.shoot_cooldown < 0.0;
-            if player_action_map.shoot {
-                player_action_map.shoot_cooldown = PlayerActionSystem::FIRE_RATE;
-            }
+    fn run(&mut self, (players, transforms, mut action_maps, input): Self::SystemData) {
+        for (_player, transform, player_action_map) in
+            (&players, &transforms, &mut action_maps).join()
+        {
             let mut move_direction: Vector2 = Vector2::zeros();
+            player_action_map.shoot = input.keys_pressed[&Key::Mouse1];
             if input.keys_pressed[&Key::W] {
                 move_direction.y = 1.0;
             }

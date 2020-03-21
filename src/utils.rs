@@ -78,3 +78,4 @@ pub fn sync_transforms(world: &mut World) -> Vec<(Vector2, f32)> {
 }
 
 pub const PI: f32 = 3.141592;
+pub const TO_RADIANS: f32 = (1.0 / 360.0) * 2.0 * PI;

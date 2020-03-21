@@ -8,24 +8,26 @@ use specs::World;
 use specs::WriteStorage;
 use specs::{join::Join, ReadStorage};
 
+mod ai_marine_action_system;
 mod assets;
 mod bullet_system;
 mod components;
 mod input;
-mod input_to_player_action_system;
+mod input_to_marine_action_system;
+mod marine_action_system;
 mod muzzle_flash_system;
 mod physics_system;
-mod player_action_system;
 mod scroll_system;
 mod utils;
 
+use ai_marine_action_system::*;
 use assets::*;
 use bullet_system::*;
 use components::*;
 use input::*;
-use input_to_player_action_system::*;
+use input_to_marine_action_system::*;
+use marine_action_system::*;
 use muzzle_flash_system::*;
-use player_action_system::*;
 use scroll_system::*;
 use utils::*;
 

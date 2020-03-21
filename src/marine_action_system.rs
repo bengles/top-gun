@@ -1,34 +1,46 @@
 use super::*;
 use specs::prelude::*;
 
-pub struct PlayerActionSystem;
+pub struct MartineActionSystem;
 
-impl PlayerActionSystem {
+impl MartineActionSystem {
     pub const MOVE_SPEED: f32 = 5.0;
     pub const FIRE_RATE: f32 = 0.2;
 }
 
-impl<'a> System<'a> for PlayerActionSystem {
+impl<'a> System<'a> for MartineActionSystem {
     type SystemData = (
-        ReadStorage<'a, PlayerActionMap>,
+        WriteStorage<'a, MarineActionMap>,
         WriteStorage<'a, Transform>,
         WriteStorage<'a, RigidBody>,
         Entities<'a>,
+        ReadExpect<'a, Input>,
         Read<'a, LazyUpdate>,
     );
 
     fn run(
         &mut self,
-        (action_maps, mut transforms, mut rigidbodies, entities, updater): Self::SystemData,
+        (mut action_maps, mut transforms, mut rigidbodies, entities, input, updater): Self::SystemData,
     ) {
-        for (action_map, transform, rigidbody, entity) in
-            (&action_maps, &mut transforms, &mut rigidbodies, &entities).join()
+        for (action_map, transform, rigidbody, entity) in (
+            &mut action_maps,
+            &mut transforms,
+            &mut rigidbodies,
+            &entities,
+        )
+            .join()
         {
-            rigidbody.velocity = action_map.desired_move_direction * PlayerActionSystem::MOVE_SPEED;
+            rigidbody.velocity = action_map.desired_move_direction
+                * MartineActionSystem::MOVE_SPEED
+                * action_map.speed_modifier;
             let heading = action_map.desired_heading_direction;
             transform.rotation = arctan2(heading.y, heading.x) + PI * 0.5;
 
-            if action_map.shoot {
+            action_map.shoot_cooldown -= input.dt;
+            let shoot = action_map.shoot && action_map.shoot_cooldown < 0.0;
+            if shoot {
+                action_map.shoot_cooldown =
+                    MartineActionSystem::FIRE_RATE / action_map.fire_rate_modifier;
                 let bullet = entities.create();
                 {
                     updater.insert(

@@ -1,8 +1,7 @@
 use super::*;
 use specs::{prelude::*, Component, DenseVecStorage};
 
-#[derive(Component)]
-#[derive(Clone)]
+#[derive(Component, Clone)]
 pub struct Transform {
     pub position: Vector2,
     pub rotation: f32,
@@ -37,11 +36,13 @@ pub struct Sprite {
 }
 
 #[derive(Component)]
-pub struct PlayerActionMap {
+pub struct MarineActionMap {
     pub shoot: bool,
     pub desired_move_direction: Vector2,
     pub desired_heading_direction: Vector2,
     pub shoot_cooldown: f32,
+    pub fire_rate_modifier: f32,
+    pub speed_modifier: f32,
 }
 
 #[derive(Component)]
@@ -53,4 +54,10 @@ pub struct MuzzleFlash {
 }
 
 #[derive(Component)]
-pub struct Scroll {}
+pub struct Scroll;
+
+#[derive(Component)]
+pub struct Player;
+
+#[derive(Component)]
+pub struct AI;
