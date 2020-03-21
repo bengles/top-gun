@@ -55,6 +55,7 @@ impl<'a, 'b> Game<'a, 'b> {
     pub fn update(&mut self) {
         // update loop of the game.
         self.world.insert(self.input.clone());
+
         match self.state {
             GameState::Init => self.init(),
             GameState::Play => self.dispatcher.run_now(&self.world),
@@ -125,7 +126,7 @@ impl Game<'_, '_> {
             })
             .with(Collider {
                 collider_type: ColliderType::Sphere,
-                radius: 0.0,
+                radius: 0.5,
                 size: Vector2::new(0.0, 0.0),
                 is_trigger: false,
             })
@@ -136,6 +137,33 @@ impl Game<'_, '_> {
                 shoot_cooldown: 0.0,
             })
             .build();
+
+        self.world
+            .create_entity()
+            .with(Transform {
+                position: Vector2::new(0.0, 5.0),
+                rotation: 0.0,
+                parent: None,
+            })
+            .with(Sprite {
+                size: Vector2::new(1.0, 1.0),
+                sprite: SpriteType::Defense,
+                layer: 2,
+            })
+            .with(RigidBody {
+                velocity: Vector2::new(0.0, 0.0),
+                spin: 0.0,
+            })
+            .with(Collider {
+                collider_type: ColliderType::Sphere,
+                radius: 0.5,
+                size: Vector2::new(0.0, 0.0),
+                is_trigger: false,
+            })
+            .build();
+
+        let collision_pairs: CollisionPairs = CollisionPairs { pairs: vec![] };
+        self.world.insert(collision_pairs);
 
         self.state = GameState::Play;
     }
