@@ -51,3 +51,6 @@ pub struct Bullet;
 pub struct MuzzleFlash {
     pub time_to_live: f32,
 }
+
+#[derive(Component)]
+pub struct Scroll {}
