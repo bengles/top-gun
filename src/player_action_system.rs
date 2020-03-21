@@ -49,6 +49,7 @@ impl<'a> System<'a> for PlayerActionSystem {
                         Sprite {
                             sprite: SpriteType::Bullet,
                             size: Vector2::new(2.0, 2.0),
+                            layer: 1,
                         },
                     );
                     updater.insert(
@@ -77,6 +78,7 @@ impl<'a> System<'a> for PlayerActionSystem {
                         Sprite {
                             sprite: SpriteType::MuzzleFlash,
                             size: Vector2::new(2.0, 2.0),
+                            layer: 2,
                         },
                     );
                 }
