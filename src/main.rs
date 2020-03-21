@@ -8,8 +8,8 @@ use specs::{join::Join, ReadStorage};
 mod assets;
 mod components;
 mod input;
-mod physics_system;
 mod input_to_player_action_system;
+mod physics_system;
 mod player_action_system;
 mod utils;
 
@@ -137,10 +137,7 @@ impl<'a, 'b> EventHandler for TopGun<'a, 'b> {
         for (sprite, transform) in (&sprites, &transforms).join() {
             let image = &self.game.assets.sprites[&sprite.sprite];
             let p = graphics::DrawParam::new()
-                .dest(Point2::new(
-                    transform.position.x,
-                    transform.position.y,
-                ))
+                .dest(Point2::new(transform.position.x, transform.position.y))
                 .scale(Vector2::new(
                     sprite.size.x / image.width() as f32,
                     sprite.size.y / image.height() as f32,
