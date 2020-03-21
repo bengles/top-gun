@@ -1,10 +1,11 @@
 use super::*;
-use specs::{Component, DenseVecStorage};
+use specs::{prelude::*, Component, DenseVecStorage};
 
 #[derive(Component)]
 pub struct Transform {
     pub position: Vector2,
     pub rotation: f32,
+    pub parent: Option<Entity>,
 }
 
 #[derive(Component)]
@@ -38,6 +39,7 @@ pub struct PlayerActionMap {
     pub shoot: bool,
     pub desired_move_direction: Vector2,
     pub desired_heading_direction: Vector2,
+    pub shoot_cooldown: f32,
 }
 
 #[derive(Component)]

@@ -3,6 +3,9 @@ use ggez::event::KeyMods;
 use ggez::event::MouseButton;
 use ggez::event::{self, EventHandler};
 use ggez::{graphics, Context, ContextBuilder, GameResult};
+use specs::Entities;
+use specs::World;
+use specs::WriteStorage;
 use specs::{join::Join, ReadStorage};
 
 mod assets;
@@ -120,6 +123,52 @@ impl<'a, 'b> TopGun<'a, 'b> {
             self.screen_to_world * ggez::nalgebra::Vector4::new(pt.x as f32, pt.y as f32, 0.0, 1.0);
         Vector2::new(pt.x, pt.y)
     }
+
+    fn draw_sprites(&mut self, ctx: &mut Context) {
+        graphics::clear(ctx, graphics::BLACK);
+        self.update_view_matrix(ctx);
+        let world_transforms = utils::sync_transforms(&mut self.game.world);
+
+        let mut layers = std::collections::HashMap::<u32, Vec<(&Sprite, (Vector2, f32))>>::new();
+
+        // Render all sprite objects
+        let (_entities, sprites, transforms): (
+            Entities,
+            ReadStorage<Sprite>,
+            ReadStorage<Transform>,
+        ) = self.game.world.system_data();
+        let mut i = 0;
+        for (_entity, sprite, _transform) in (&_entities, &sprites, &transforms).join() {
+            if !layers.contains_key(&sprite.layer) {
+                layers.insert(sprite.layer, vec![]);
+            }
+            layers
+                .get_mut(&sprite.layer)
+                .unwrap()
+                .push((sprite, (world_transforms[i].0, world_transforms[i].1)));
+            i += 1;
+        }
+
+        for layer in 0..16 {
+            if let Some(layer_sprites) = layers.get(&layer) {
+                for (sprite, (position, rotation)) in layer_sprites {
+                    let image = &self.game.assets.sprites[&sprite.sprite];
+                    let p = graphics::DrawParam::new()
+                        .dest(Point2::new(position.x, position.y))
+                        .scale(Vector2::new(
+                            sprite.size.x / image.width() as f32,
+                            sprite.size.y / image.height() as f32,
+                        ))
+                        .rotation(*rotation)
+                        .offset(Point2::new(0.5, 0.5))
+                        .color([1.0, 1.0, 1.0, 1.0].into());
+                    graphics::draw(ctx, image, p).unwrap();
+                }
+            }
+        }
+
+        graphics::present(ctx).unwrap();
+    }
 }
 
 impl<'a, 'b> EventHandler for TopGun<'a, 'b> {
@@ -131,47 +180,13 @@ impl<'a, 'b> EventHandler for TopGun<'a, 'b> {
         self.game.input = self.input.clone();
         self.game.update();
         self.input.reset();
+        self.draw_sprites(ctx);
         Ok(())
     }
 
-    fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
-        graphics::clear(ctx, graphics::BLACK);
-        self.update_view_matrix(ctx);
-
-        let mut layers = std::collections::HashMap::<u32, Vec<(&Sprite, &Transform)>>::new();
-
-        // Render all sprite objects
-        let (sprites, transforms): (ReadStorage<Sprite>, ReadStorage<Transform>) =
-            self.game.world.system_data();
-        for (sprite, transform) in (&sprites, &transforms).join() {
-            if !layers.contains_key(&sprite.layer) {
-                layers.insert(sprite.layer, vec![]);
-            }
-            layers
-                .get_mut(&sprite.layer)
-                .unwrap()
-                .push((sprite, transform));
-        }
-
-        for layer in 0..16 {
-            if let Some(layer_sprites) = layers.get(&layer) {
-                for (sprite, transform) in layer_sprites {
-                    let image = &self.game.assets.sprites[&sprite.sprite];
-                    let p = graphics::DrawParam::new()
-                        .dest(Point2::new(transform.position.x, transform.position.y))
-                        .scale(Vector2::new(
-                            sprite.size.x / image.width() as f32,
-                            sprite.size.y / image.height() as f32,
-                        ))
-                        .rotation(transform.rotation)
-                        .offset(Point2::new(0.5, 0.5))
-                        .color([1.0, 1.0, 1.0, 1.0].into());
-                    graphics::draw(ctx, image, p)?;
-                }
-            }
-        }
-
-        graphics::present(ctx)
+    fn draw(&mut self, _ctx: &mut Context) -> GameResult<()> {
+        // We draw in update.
+        Ok(())
     }
 
     fn mouse_button_down_event(
