@@ -28,6 +28,7 @@ impl<'a, 'b> Game<'a, 'b> {
             .with(Transform {
                 position: Vector2::new(0.0, 0.0),
                 rotation: 0.0,
+                parent: None,
             })
             .with(Sprite {
                 size: Vector2::new(16.0, 9.0) * 2.2,
@@ -41,6 +42,7 @@ impl<'a, 'b> Game<'a, 'b> {
             .with(Transform {
                 position: Vector2::new(0.0, 0.0),
                 rotation: 0.0,
+                parent: None,
             })
             .with(Sprite {
                 size: Vector2::new(1.0, 1.0),
@@ -61,6 +63,7 @@ impl<'a, 'b> Game<'a, 'b> {
                 shoot: false,
                 desired_move_direction: Vector2::zeros(),
                 desired_heading_direction: Vector2::zeros(),
+                shoot_cooldown: 0.0,
             })
             .build();
 
@@ -97,6 +100,7 @@ impl<'a, 'b> Game<'a, 'b> {
             .with(PlayerActionSystem, "player_action_system", &[])
             .with(BulletSystem, "bullet_system", &[])
             .with(MuzzleFlashSystem, "muzzle_flash_system", &[])
+            //.with(SyncTransformSystem, "sync_transform_system", &[])
             .build();
 
         Game {
