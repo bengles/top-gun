@@ -2,6 +2,7 @@ use super::*;
 use specs::{Component, DenseVecStorage};
 
 #[derive(Component)]
+#[derive(Clone)]
 pub struct Transform {
     pub position: Vector2,
     pub rotation: f32,
@@ -21,6 +22,7 @@ pub struct Collider {
     pub is_trigger: bool,
 }
 
+#[derive(PartialEq)]
 pub enum ColliderType {
     Sphere,
     Rectangle,

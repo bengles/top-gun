@@ -53,7 +53,7 @@ impl<'a, 'b> Game<'a, 'b> {
             })
             .with(Collider {
                 collider_type: ColliderType::Sphere,
-                radius: 0.0,
+                radius: 0.5,
                 size: Vector2::new(0.0, 0.0),
                 is_trigger: false,
             })
@@ -61,6 +61,29 @@ impl<'a, 'b> Game<'a, 'b> {
                 shoot: false,
                 desired_move_direction: Vector2::zeros(),
                 desired_heading_direction: Vector2::zeros(),
+            })
+            .build();
+
+            world
+            .create_entity()
+            .with(Transform {
+                position: Vector2::new(0.0, 5.0),
+                rotation: 0.0,
+            })
+            .with(Sprite {
+                size: Vector2::new(1.0, 1.0),
+                sprite: SpriteType::Defense,
+                layer: 2,
+            })
+            .with(RigidBody {
+                velocity: Vector2::new(0.0, 0.0),
+                spin: 0.0,
+            })
+            .with(Collider {
+                collider_type: ColliderType::Sphere,
+                radius: 0.5,
+                size: Vector2::new(0.0, 0.0),
+                is_trigger: false,
             })
             .build();
 
