@@ -41,13 +41,13 @@ impl<'a, 'b> Game<'a, 'b> {
             })
             .with(Sprite {
                 size: Vector2::new(1.0, 1.0),
-                sprite: SpriteType::Defense,
+                sprite: SpriteType::Player1,
             })
-            .with(RigidBody{
-                velocity: Vector2::new(1.0, 0.0),
+            .with(RigidBody {
+                velocity: Vector2::new(0.0, 0.0),
                 spin: 0.0,
             })
-            .with(Collider{
+            .with(Collider {
                 collider_type: ColliderType::Sphere,
                 radius: 0.0,
                 size: Vector2::new(0.0, 0.0),
@@ -67,6 +67,7 @@ impl<'a, 'b> Game<'a, 'b> {
                 "input_to_player_action_system",
                 &[],
             )
+            .with(PlayerActionSystem, "player_action_system", &[])
             .build();
 
         Game {
@@ -81,5 +82,6 @@ impl<'a, 'b> Game<'a, 'b> {
         // update loop of the game.
         self.world.insert(self.input.clone());
         self.dispatcher.run_now(&self.world);
+        self.world.maintain();
     }
 }

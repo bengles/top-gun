@@ -8,13 +8,17 @@ use specs::{join::Join, ReadStorage};
 mod assets;
 mod components;
 mod input;
-mod physics_system;
 mod input_to_player_action_system;
+mod physics_system;
+mod player_action_system;
+mod utils;
 
 use assets::*;
 use components::*;
 use input::*;
 use input_to_player_action_system::*;
+use player_action_system::*;
+use utils::*;
 
 // Define usual 2d data structs.
 pub type Point2 = ggez::nalgebra::Point2<f32>;
@@ -133,14 +137,13 @@ impl<'a, 'b> EventHandler for TopGun<'a, 'b> {
         for (sprite, transform) in (&sprites, &transforms).join() {
             let image = &self.game.assets.sprites[&sprite.sprite];
             let p = graphics::DrawParam::new()
-                .dest(Point2::new(
-                    transform.position.x - sprite.size.x * 0.5,
-                    transform.position.y - sprite.size.y * 0.5,
-                ))
+                .dest(Point2::new(transform.position.x, transform.position.y))
                 .scale(Vector2::new(
                     sprite.size.x / image.width() as f32,
                     sprite.size.y / image.height() as f32,
                 ))
+                .rotation(transform.rotation)
+                .offset(Point2::new(0.5, 0.5))
                 .color([1.0, 1.0, 1.0, 1.0].into());
             graphics::draw(ctx, image, p)?;
         }
@@ -159,11 +162,23 @@ impl<'a, 'b> EventHandler for TopGun<'a, 'b> {
             MouseButton::Right => self.input.keys_down.insert(Key::Mouse2, true),
             _ => None,
         };
+
+        match button {
+            MouseButton::Left => self.input.keys_pressed.insert(Key::Mouse1, true),
+            MouseButton::Right => self.input.keys_pressed.insert(Key::Mouse2, true),
+            _ => None,
+        };
     }
     fn mouse_button_up_event(&mut self, _ctx: &mut Context, button: MouseButton, _x: f32, _y: f32) {
         match button {
             MouseButton::Left => self.input.keys_up.insert(Key::Mouse1, true),
             MouseButton::Right => self.input.keys_up.insert(Key::Mouse2, true),
+            _ => None,
+        };
+
+        match button {
+            MouseButton::Left => self.input.keys_pressed.insert(Key::Mouse1, false),
+            MouseButton::Right => self.input.keys_pressed.insert(Key::Mouse2, false),
             _ => None,
         };
     }

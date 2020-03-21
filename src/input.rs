@@ -10,8 +10,8 @@ pub struct Input {
     pub dt: f32,
 }
 
-impl Input {
-    pub fn default() -> Input {
+impl Default for Input {
+    fn default() -> Input {
         let mut keys_pressed = HashMap::new();
         keys_pressed.insert(Key::W, false);
         keys_pressed.insert(Key::A, false);
@@ -46,7 +46,9 @@ impl Input {
             dt: 0.0,
         }
     }
+}
 
+impl Input {
     pub fn reset(&mut self) {
         self.keys_down.insert(Key::W, false);
         self.keys_down.insert(Key::A, false);
