@@ -23,6 +23,9 @@ impl<'a, 'b> Game<'a, 'b> {
         world.register::<Bullet>();
         world.register::<MuzzleFlash>();
 
+        let collision_pairs: CollisionPairs = CollisionPairs { pairs: vec![] };
+        world.insert(collision_pairs);
+
         world
             .create_entity()
             .with(Transform {
@@ -67,11 +70,12 @@ impl<'a, 'b> Game<'a, 'b> {
             })
             .build();
 
-            world
+        world
             .create_entity()
             .with(Transform {
                 position: Vector2::new(0.0, 5.0),
                 rotation: 0.0,
+                parent: None,
             })
             .with(Sprite {
                 size: Vector2::new(1.0, 1.0),

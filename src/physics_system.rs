@@ -9,30 +9,58 @@ impl<'a> System<'a> for PhysicsSystem {
         ReadStorage<'a, RigidBody>,
         ReadStorage<'a, Collider>,
         WriteStorage<'a, Transform>,
+        Entities<'a>,
+        WriteExpect<'a, CollisionPairs>,
         ReadExpect<'a, Input>,
     );
 
-    fn run(&mut self, (rigid_bodies, colliders, mut transforms, input): Self::SystemData) {
-        let mut other_entities: Vec<(&RigidBody, &Collider, Transform)> = vec![];
-        for (rigid_body, collider, transform) in (&rigid_bodies, &colliders, &transforms).join() {
-            other_entities.push((rigid_body, collider, transform.clone()));
+    fn run(
+        &mut self,
+        (rigid_bodies, colliders, mut transforms, entities, mut collision_pairs, input): Self::SystemData,
+    ) {
+        collision_pairs.pairs.clear();
+
+        let mut other_entities: Vec<(&RigidBody, &Collider, Entity, Transform)> = vec![];
+        for (rigid_body, collider, entity, transform) in
+            (&rigid_bodies, &colliders, &entities, &transforms).join()
+        {
+            other_entities.push((rigid_body, collider, entity, transform.clone()));
         }
 
-        for (rigid_body, collider, transform) in (&rigid_bodies, &colliders, &mut transforms).join()
+        for (rigid_body, collider, entity, transform) in
+            (&rigid_bodies, &colliders, &entities, &mut transforms).join()
         {
-            if rigid_body.velocity.x != 0.0 || rigid_body.velocity.y != 0.0 {
-                transform.position += rigid_body.velocity * input.dt;
+            if rigid_body.velocity.x == 0.0 && rigid_body.velocity.y == 0.0 {
+                continue;
+            }
 
-                for (_other_rigid_body, other_collider, other_transform) in &other_entities {
-                    if !std::ptr::eq(collider, *other_collider)
-                        && are_colliding(collider, other_collider, transform, other_transform)
-                    {
-                        treat_collision(rigid_body, collider, other_collider, transform, other_transform);
+            transform.position += rigid_body.velocity * input.dt;
+
+            for (_other_rigid_body, other_collider, other_entity, other_transform) in
+                &other_entities
+            {
+                if !std::ptr::eq(collider, *other_collider)
+                    && are_colliding(collider, other_collider, transform, other_transform)
+                {
+                    if collider.is_trigger || other_collider.is_trigger {
+                        collision_pairs.pairs.push((entity, *other_entity));
+                    } else {
+                        treat_collision(
+                            rigid_body,
+                            collider,
+                            other_collider,
+                            transform,
+                            other_transform,
+                        );
                     }
                 }
             }
         }
     }
+}
+
+pub struct CollisionPairs {
+    pub pairs: Vec<(Entity, Entity)>,
 }
 
 fn are_colliding(
