@@ -16,6 +16,7 @@ mod input_to_player_action_system;
 mod muzzle_flash_system;
 mod physics_system;
 mod player_action_system;
+mod scroll_system;
 mod utils;
 
 use assets::*;
@@ -25,6 +26,7 @@ use input::*;
 use input_to_player_action_system::*;
 use muzzle_flash_system::*;
 use player_action_system::*;
+use scroll_system::*;
 use utils::*;
 
 // Define usual 2d data structs.
@@ -126,7 +128,6 @@ impl<'a, 'b> TopGun<'a, 'b> {
 
     fn draw_sprites(&mut self, ctx: &mut Context) {
         graphics::clear(ctx, graphics::BLACK);
-        self.update_view_matrix(ctx);
         let world_transforms = utils::sync_transforms(&mut self.game.world);
 
         let mut layers = std::collections::HashMap::<u32, Vec<(&Sprite, (Vector2, f32))>>::new();
@@ -173,6 +174,7 @@ impl<'a, 'b> TopGun<'a, 'b> {
 
 impl<'a, 'b> EventHandler for TopGun<'a, 'b> {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
+        self.update_view_matrix(ctx);
         self.input.dt = ggez::timer::delta(ctx).as_secs_f32();
         let screen_size = graphics::size(ctx);
         let world_size = self.screen_to_world(Vector2::new(screen_size.0, screen_size.1));
