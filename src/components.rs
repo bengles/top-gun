@@ -41,3 +41,8 @@ pub struct PlayerActionMap {
 
 #[derive(Component)]
 pub struct Bullet;
+
+#[derive(Component)]
+pub struct MuzzleFlash {
+    pub time_to_live: f32,
+}
