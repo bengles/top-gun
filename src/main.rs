@@ -138,7 +138,7 @@ impl<'a, 'b> TopGun<'a, 'b> {
             ReadStorage<Transform>,
         ) = self.game.world.system_data();
         let mut i = 0;
-        for (_entity, sprite, transform) in (&_entities, &sprites, &transforms).join() {
+        for (_entity, sprite, _transform) in (&_entities, &sprites, &transforms).join() {
             if !layers.contains_key(&sprite.layer) {
                 layers.insert(sprite.layer, vec![]);
             }
