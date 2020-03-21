@@ -32,6 +32,7 @@ impl<'a, 'b> Game<'a, 'b> {
             .with(Sprite {
                 size: Vector2::new(16.0, 9.0) * 2.2,
                 sprite: SpriteType::Background,
+                layer: 0,
             })
             .build();
 
@@ -44,6 +45,7 @@ impl<'a, 'b> Game<'a, 'b> {
             .with(Sprite {
                 size: Vector2::new(1.0, 1.0),
                 sprite: SpriteType::Player1,
+                layer: 2,
             })
             .with(RigidBody {
                 velocity: Vector2::new(0.0, 0.0),

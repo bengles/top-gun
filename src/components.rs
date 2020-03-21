@@ -30,6 +30,7 @@ pub enum ColliderType {
 pub struct Sprite {
     pub size: Vector2,
     pub sprite: SpriteType,
+    pub layer: u32,
 }
 
 #[derive(Component)]

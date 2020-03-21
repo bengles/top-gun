@@ -138,22 +138,39 @@ impl<'a, 'b> EventHandler for TopGun<'a, 'b> {
         graphics::clear(ctx, graphics::BLACK);
         self.update_view_matrix(ctx);
 
+        let mut layers = std::collections::HashMap::<u32, Vec<(&Sprite, &Transform)>>::new();
+
         // Render all sprite objects
         let (sprites, transforms): (ReadStorage<Sprite>, ReadStorage<Transform>) =
             self.game.world.system_data();
         for (sprite, transform) in (&sprites, &transforms).join() {
-            let image = &self.game.assets.sprites[&sprite.sprite];
-            let p = graphics::DrawParam::new()
-                .dest(Point2::new(transform.position.x, transform.position.y))
-                .scale(Vector2::new(
-                    sprite.size.x / image.width() as f32,
-                    sprite.size.y / image.height() as f32,
-                ))
-                .rotation(transform.rotation)
-                .offset(Point2::new(0.5, 0.5))
-                .color([1.0, 1.0, 1.0, 1.0].into());
-            graphics::draw(ctx, image, p)?;
+            if !layers.contains_key(&sprite.layer) {
+                layers.insert(sprite.layer, vec![]);
+            }
+            layers
+                .get_mut(&sprite.layer)
+                .unwrap()
+                .push((sprite, transform));
         }
+
+        for layer in 0..16 {
+            if let Some(layer_sprites) = layers.get(&layer) {
+                for (sprite, transform) in layer_sprites {
+                    let image = &self.game.assets.sprites[&sprite.sprite];
+                    let p = graphics::DrawParam::new()
+                        .dest(Point2::new(transform.position.x, transform.position.y))
+                        .scale(Vector2::new(
+                            sprite.size.x / image.width() as f32,
+                            sprite.size.y / image.height() as f32,
+                        ))
+                        .rotation(transform.rotation)
+                        .offset(Point2::new(0.5, 0.5))
+                        .color([1.0, 1.0, 1.0, 1.0].into());
+                    graphics::draw(ctx, image, p)?;
+                }
+            }
+        }
+
         graphics::present(ctx)
     }
 
