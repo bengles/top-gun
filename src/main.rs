@@ -48,8 +48,10 @@ use std::thread;
 use crossbeam_channel::*;
 use laminar::{Packet, Socket, SocketEvent};
 use serde::{Deserialize, Serialize};
+mod network_context;
+use network_context::*;
 
-const SERVER: &str = "127.0.0.1:12351";
+const SERVER: &str = "0.0.0.0:12351";
 
 fn main() {
     let (mut ctx, mut event_loop) = ContextBuilder::new("my_game", "Cool Game Author")
@@ -89,9 +91,7 @@ struct TopGun<'a, 'b> {
     pub game: Game<'a, 'b>,
     pub input: Input,
     pub screen_to_world: Matrix4,
-    pub is_host: bool,
-    pub receiver: Receiver<SocketEvent>,
-    pub sender: Sender<Packet>,
+    pub network_context: NetworkContext,
 }
 
 impl<'a, 'b> TopGun<'a, 'b> {
@@ -111,7 +111,7 @@ impl<'a, 'b> TopGun<'a, 'b> {
             Socket::bind(SERVER).unwrap()
         } else {
             // client
-            let addr = "127.0.0.1:12352";
+            let addr = "127.0.0.1:12351";
             Socket::bind(addr).unwrap()
         };
 
@@ -121,9 +121,12 @@ impl<'a, 'b> TopGun<'a, 'b> {
             game: Game::new(assets, is_host),
             input: Input::default(),
             screen_to_world: Matrix4::identity(),
-            is_host: is_host,
-            receiver: receiver,
-            sender: sender,
+            network_context: NetworkContext {
+                is_host: is_host,
+                sender: sender,
+                receiver: receiver,
+                client_sockets: vec![],
+            },
         }
     }
 
@@ -214,16 +217,37 @@ impl<'a, 'b> TopGun<'a, 'b> {
     fn receive_events(&mut self) {
         self.game.network_messages = vec![];
         loop {
-            if let Ok(event) = self.receiver.try_recv() {
+            if let Ok(event) = self.network_context.receiver.try_recv() {
                 match event {
                     SocketEvent::Packet(packet) => {
+                        if !self.network_context.is_host {
+                            println!("CLIENT RECEIVED SOMETHING");
+                        }
+                        else {
+                            self.network_context.client_sockets.push(packet.addr());
+                        }
                         let msg = packet.payload();
                         self.game
                             .network_messages
                             .push(serde_json::from_str(&String::from_utf8_lossy(msg)).unwrap());
                     }
                     SocketEvent::Timeout(address) => {
-                        println!("Client timed out: {}", address);
+                        if !self.network_context.is_host {
+                            println!("TIME OUT");
+                        }
+                        let mut i: Option<usize> = None;
+                        for ip in self.network_context.client_sockets.iter() {
+                            if i.is_none(){
+                                i = Some(0);
+                            }
+                            if *ip == address {
+                                break;
+                            }
+                            i = Some(i.unwrap() + 1);
+                        }
+                        if let Some(index) = i {
+                            self.network_context.client_sockets.swap_remove(index);
+                        }
                     }
                     _ => {}
                 }
@@ -245,16 +269,19 @@ impl<'a, 'b> TopGun<'a, 'b> {
             for (_entity, _player, action_map, network) in
                 (&_entities, &players, &action_maps, &networks).join()
             {
-                let _ = self.sender.try_send(Packet::unreliable_sequenced(
-                    SERVER.parse().unwrap(),
-                    serde_json::to_vec(&NetworkMessage {
-                        id: network.id,
-                        message_type: 0,
-                        payload: serde_json::to_string(&action_map).unwrap(),
-                    })
-                    .unwrap(),
-                    Some(1),
-                ));
+                let _ = self
+                    .network_context
+                    .sender
+                    .try_send(Packet::unreliable_sequenced(
+                        SERVER.parse().unwrap(),
+                        serde_json::to_vec(&NetworkMessage {
+                            id: network.id,
+                            message_type: 0,
+                            payload: serde_json::to_string(&action_map).unwrap(),
+                        })
+                        .unwrap(),
+                        Some(1),
+                    ));
             }
         }
 
@@ -269,16 +296,42 @@ impl<'a, 'b> TopGun<'a, 'b> {
             for (_entity, _player, transform, network) in
                 (&_entities, &players, &transforms, &networks).join()
             {
-                let _ = self.sender.try_send(Packet::unreliable_sequenced(
-                    SERVER.parse().unwrap(),
-                    serde_json::to_vec(&NetworkMessage {
-                        id: network.id,
-                        message_type: 1,
-                        payload: serde_json::to_string(&transform).unwrap(),
-                    })
-                    .unwrap(),
-                    Some(1),
-                ));
+                let _ = self
+                    .network_context
+                    .sender
+                    .try_send(Packet::unreliable_sequenced(
+                        SERVER.parse().unwrap(),
+                        serde_json::to_vec(&NetworkMessage {
+                            id: network.id,
+                            message_type: 1,
+                            payload: serde_json::to_string(&transform).unwrap(),
+                        })
+                        .unwrap(),
+                        Some(1),
+                    ));
+            }
+        }
+    }
+
+    fn broadcast(&mut self) {
+        let (transforms, networks): (ReadStorage<Transform>, ReadStorage<Network>) =
+            self.game.world.system_data();
+
+        for (transform, network) in (&transforms, &networks).join() {
+            let network_message = NetworkMessage {
+                id: network.id,
+                message_type: 0,
+                payload: serde_json::to_string(&transform).unwrap(),
+            };
+            for ip in self.network_context.client_sockets.iter() {
+                let _ = self
+                    .network_context
+                    .sender
+                    .try_send(Packet::unreliable_sequenced(
+                        *ip,
+                        serde_json::to_vec(&network_message).unwrap(),
+                        Some(1),
+                    ));
             }
         }
     }
@@ -293,14 +346,15 @@ impl<'a, 'b> EventHandler for TopGun<'a, 'b> {
         self.input.world_size = world_size;
         self.game.input = self.input.clone();
         self.game.update();
-        if !self.is_host {
+        if !self.network_context.is_host {
             self.send_events();
         }
         self.input.reset();
         self.draw_sprites(ctx);
-        if self.is_host {
-            self.receive_events();
+        if self.network_context.is_host {
+            self.broadcast();
         }
+        self.receive_events();
         Ok(())
     }
 
