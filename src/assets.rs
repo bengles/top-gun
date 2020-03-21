@@ -25,6 +25,10 @@ impl Assets {
             SpriteType::Background,
             Image::new(ctx, "/sprites/bridge_background.png").unwrap(),
         );
+        sprites.insert(
+            SpriteType::Bullet,
+            Image::new(ctx, "/sprites/bullet.png").unwrap(),
+        );
         Assets { sprites: sprites }
     }
 }
@@ -35,4 +39,5 @@ pub enum SpriteType {
     Background,
     Player1,
     Player2,
+    Bullet,
 }

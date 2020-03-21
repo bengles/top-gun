@@ -11,12 +11,14 @@ mod input;
 mod physics_system;
 mod input_to_player_action_system;
 mod player_action_system;
+mod utils;
 
 use assets::*;
 use components::*;
 use input::*;
 use input_to_player_action_system::*;
 use player_action_system::*;
+use utils::*;
 
 // Define usual 2d data structs.
 pub type Point2 = ggez::nalgebra::Point2<f32>;
@@ -136,13 +138,15 @@ impl<'a, 'b> EventHandler for TopGun<'a, 'b> {
             let image = &self.game.assets.sprites[&sprite.sprite];
             let p = graphics::DrawParam::new()
                 .dest(Point2::new(
-                    transform.position.x - sprite.size.x * 0.5,
-                    transform.position.y - sprite.size.y * 0.5,
+                    transform.position.x,
+                    transform.position.y,
                 ))
                 .scale(Vector2::new(
                     sprite.size.x / image.width() as f32,
                     sprite.size.y / image.height() as f32,
                 ))
+                .rotation(transform.rotation)
+                .offset(Point2::new(0.5, 0.5))
                 .color([1.0, 1.0, 1.0, 1.0].into());
             graphics::draw(ctx, image, p)?;
         }

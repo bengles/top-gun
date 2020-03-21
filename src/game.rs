@@ -41,10 +41,10 @@ impl<'a, 'b> Game<'a, 'b> {
             })
             .with(Sprite {
                 size: Vector2::new(1.0, 1.0),
-                sprite: SpriteType::Defense,
+                sprite: SpriteType::Player1,
             })
             .with(RigidBody{
-                velocity: Vector2::new(1.0, 0.0),
+                velocity: Vector2::new(0.0, 0.0),
                 spin: 0.0,
             })
             .with(Collider{
@@ -67,6 +67,9 @@ impl<'a, 'b> Game<'a, 'b> {
                 "input_to_player_action_system",
                 &[],
             )
+            .with(PlayerActionSystem,
+                "player_action_system",
+            &[])
             .build();
 
         Game {
