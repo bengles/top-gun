@@ -1,10 +1,11 @@
 use super::*;
 use specs::{prelude::*, Component, DenseVecStorage};
 
-#[derive(Component, Clone)]
+#[derive(Component, Clone, Serialize, Deserialize)]
 pub struct Transform {
     pub position: Vector2,
     pub rotation: f32,
+    #[serde(skip)]
     pub parent: Option<Entity>,
 }
 
@@ -35,7 +36,7 @@ pub struct Sprite {
     pub layer: u32,
 }
 
-#[derive(Component)]
+#[derive(Component, Clone, Serialize, Deserialize)]
 pub struct MarineActionMap {
     pub shoot: bool,
     pub desired_move_direction: Vector2,
@@ -61,3 +62,15 @@ pub struct Player;
 
 #[derive(Component)]
 pub struct AI;
+
+#[derive(Component)]
+pub struct Network {
+    pub id: u32,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct NetworkMessage {
+    pub id: u32,
+    pub message_type: u32,
+    pub payload: String,
+}

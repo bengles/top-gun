@@ -14,10 +14,12 @@ pub struct Game<'a, 'b> {
     pub dispatcher: Dispatcher<'a, 'b>,
     pub assets: Assets,
     pub input: Input,
+    pub network_messages: Vec<NetworkMessage>,
+    pub is_host: bool,
 }
 
 impl<'a, 'b> Game<'a, 'b> {
-    pub fn new(assets: Assets) -> Game<'a, 'b> {
+    pub fn new(assets: Assets, is_host: bool) -> Game<'a, 'b> {
         // use this to initalize the game struct.
         let mut world = World::new();
 
@@ -31,6 +33,7 @@ impl<'a, 'b> Game<'a, 'b> {
         world.register::<Scroll>();
         world.register::<Player>();
         world.register::<AI>();
+        world.register::<Network>();
 
         let dispatcher = DispatcherBuilder::new()
             .with(PhysicsSystem, "physics_system", &[])
@@ -44,6 +47,16 @@ impl<'a, 'b> Game<'a, 'b> {
             .with(MuzzleFlashSystem, "muzzle_flash_system", &[])
             .with(ScrollSystem, "scroll_system", &[])
             .with(AiMarineActionSystem, "ai_marine_action_system", &[])
+            .with(
+                NetworkMarineActionSystem,
+                "network_marine_action_system",
+                &[],
+            )
+            .with(
+                NetworkTransformSyncSystem,
+                "network_transform_sync_system",
+                &[],
+            )
             .build();
 
         Game {
@@ -52,17 +65,21 @@ impl<'a, 'b> Game<'a, 'b> {
             dispatcher: dispatcher,
             assets: assets,
             input: Input::default(),
+            network_messages: vec![],
+            is_host: is_host,
         }
     }
 
     pub fn update(&mut self) {
         // update loop of the game.
         self.world.insert(self.input.clone());
+        self.world.insert(self.network_messages.clone());
 
         match self.state {
             GameState::Init => self.init(),
             GameState::Play => self.dispatcher.run_now(&self.world),
         }
+
         self.world.maintain();
     }
 }
@@ -114,6 +131,8 @@ impl Game<'_, '_> {
             .build();
 
         // Player
+        let id = if self.is_host { 0 } else { 1 };
+        let sprite = if self.is_host { SpriteType::Player2 } else { SpriteType::Player1 };
         self.world
             .create_entity()
             .with(Transform {
@@ -123,7 +142,7 @@ impl Game<'_, '_> {
             })
             .with(Sprite {
                 size: Vector2::new(1.0, 1.0),
-                sprite: SpriteType::Player1,
+                sprite: sprite,
                 layer: 5,
             })
             .with(RigidBody {
@@ -145,9 +164,12 @@ impl Game<'_, '_> {
                 speed_modifier: 1.0,
             })
             .with(Player {})
+            .with(Network { id: id })
             .build();
 
         // Enemy
+        let id = if self.is_host { 1 } else { 0 };
+        let sprite = if self.is_host { SpriteType::Player1 } else { SpriteType::Player2 };
         self.world
             .create_entity()
             .with(Transform {
@@ -157,7 +179,7 @@ impl Game<'_, '_> {
             })
             .with(Sprite {
                 size: Vector2::new(1.0, 1.0),
-                sprite: SpriteType::Player2,
+                sprite: sprite,
                 layer: 5,
             })
             .with(RigidBody {
@@ -178,7 +200,7 @@ impl Game<'_, '_> {
                 fire_rate_modifier: 1.0,
                 speed_modifier: 1.0,
             })
-            .with(AI {})
+            .with(Network { id: id })
             .build();
 
         self.world
