@@ -47,16 +47,16 @@ impl<'a, 'b> Game<'a, 'b> {
             .with(MuzzleFlashSystem, "muzzle_flash_system", &[])
             .with(ScrollSystem, "scroll_system", &[])
             .with(AiMarineActionSystem, "ai_marine_action_system", &[])
-            // .with(
-            //     NetworkMarineActionSystem,
-            //     "network_marine_action_system",
-            //     &[],
-            // )
-            // .with(
-            //     NetworkTransformSyncSystem,
-            //     "network_transform_sync_system",
-            //     &[],
-            // )
+            .with(
+                NetworkMarineActionSystem,
+                "network_marine_action_system",
+                &[],
+            )
+            .with(
+                NetworkTransformSyncSystem,
+                "network_transform_sync_system",
+                &[],
+            )
             .build();
 
         Game {

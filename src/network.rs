@@ -1,18 +1,18 @@
 use super::*;
-use crossbeam_channel::*;
-use laminar::{Packet, SocketEvent};
-use std::collections::*;
+use laminar::{Packet, Socket, SocketEvent};
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 
-const SERVER: &str = "127.0.0.1:12351";
+pub const SERVER: &str = "127.0.0.1:12351";
 const CLIENT: &str = "127.0.0.1:12352";
 
 pub fn receive_thread(
     receiver: Receiver<SocketEvent>,
     arc: Arc<Mutex<Vec<NetworkMessage>>>,
     ips: Arc<Mutex<std::collections::HashSet<SocketAddr>>>,
+    ip: SocketAddr,
 ) {
+    println!("Listening on {:?}", ip);
     loop {
         if let Ok(event) = receiver.recv() {
             let mut messages = arc.lock().unwrap();
@@ -23,12 +23,10 @@ pub fn receive_thread(
                     ip_lock.insert(packet.addr());
                     let message = serde_json::from_str(&String::from_utf8_lossy(msg)).unwrap();
                     messages.push(message);
-
-                    if packet.addr() == SERVER.parse().unwrap() {
-                        println!("SERVER SEND: {:?}", message);
-                    }
                 }
-                SocketEvent::Timeout(_) => {}
+                SocketEvent::Timeout(_) => {
+                    println!("TIMEOUT");
+                }
                 _ => {}
             }
         }
@@ -46,7 +44,7 @@ pub fn send_events_to_clients(
             let _ = sender
                 .try_send(Packet::reliable_unordered(
                     *ip,
-                    serde_json::to_vec(message).unwrap(),
+                    serde_json::to_vec(&message).unwrap(),
                 ))
                 .expect("This should send");
         }
@@ -71,6 +69,8 @@ pub fn send_events_to_ip(
 }
 
 pub struct NetworkContext {
+    pub is_host: bool,
+    pub frequency: f32,
     pub send_queue: Vec<NetworkMessage>,
     pub ips_lock: Arc<Mutex<HashSet<SocketAddr>>>,
     pub received_messages_lock: Arc<Mutex<Vec<NetworkMessage>>>,
@@ -78,6 +78,8 @@ pub struct NetworkContext {
 }
 
 impl NetworkContext {
+    pub const FREQUENCY: f32 = 1.0 / 30.0;
+
     pub fn new(is_host: bool) -> NetworkContext {
         let mut socket = if is_host {
             // host
@@ -88,6 +90,7 @@ impl NetworkContext {
             Socket::bind(addr).unwrap()
         };
 
+        let ip = socket.local_addr().unwrap().clone();
         let send_queue: Vec<NetworkMessage> = vec![];
         let ips_lock: Arc<Mutex<HashSet<SocketAddr>>> =
             Arc::new(Mutex::new(HashSet::<SocketAddr>::new()));
@@ -102,10 +105,13 @@ impl NetworkContext {
                 receiver,
                 received_messages_lock_receive_thread,
                 receive_thread_ips,
+                ip,
             )
         });
 
         NetworkContext {
+            is_host: is_host,
+            frequency: NetworkContext::FREQUENCY,
             send_queue: send_queue,
             ips_lock: ips_lock,
             received_messages_lock: received_messages_lock,
