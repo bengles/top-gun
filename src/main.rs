@@ -88,27 +88,16 @@ struct TopGun<'a, 'b> {
     pub game: Game<'a, 'b>,
     pub input: Input,
     pub screen_to_world: Matrix4,
-    pub network_context: NetworkContext,
 }
 
 impl<'a, 'b> TopGun<'a, 'b> {
     pub fn new(ctx: &mut Context) -> TopGun<'a, 'b> {
         let assets = Assets::load_assets(ctx);
 
-        let mut args = std::env::args();
-        let is_host = args.len() == 2 && args.nth(1).unwrap().starts_with("h");
-
-        if is_host {
-            println!("Starting host...");
-        } else {
-            println!("Starting client...");
-        }
-
         TopGun {
-            game: Game::new(assets, is_host),
+            game: Game::new(assets),
             input: Input::default(),
             screen_to_world: Matrix4::identity(),
-            network_context: NetworkContext::new(is_host),
         }
     }
 
@@ -199,15 +188,6 @@ impl<'a, 'b> TopGun<'a, 'b> {
 
 impl<'a, 'b> EventHandler for TopGun<'a, 'b> {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
-        // Lock received messages, copy them and put into world.
-        {
-            let mut received_messages = self.network_context.received_messages_lock.lock().unwrap();
-            let messages = (*received_messages).clone();
-
-            (*received_messages).clear();
-            self.game.world.insert(messages);
-        }
-
         self.update_view_matrix(ctx);
         self.input.dt = ggez::timer::delta(ctx).as_secs_f32();
         let screen_size = graphics::size(ctx);
@@ -217,99 +197,6 @@ impl<'a, 'b> EventHandler for TopGun<'a, 'b> {
         self.game.update();
         self.input.reset();
         self.draw_sprites(ctx);
-
-        {
-            self.network_context.frequency -= self.input.dt;
-            if self.network_context.frequency < 0.0 {
-                self.network_context.frequency = NetworkContext::FREQUENCY;
-                if self.network_context.is_host {
-                    {
-                        let (_entities, action_maps, networks): (
-                            Entities,
-                            ReadStorage<MarineActionMap>,
-                            ReadStorage<Network>,
-                        ) = self.game.world.system_data();
-                        for (_entity, action_map, network) in
-                            (&_entities, &action_maps, &networks).join()
-                        {
-                            self.network_context.send_queue.push(NetworkMessage {
-                                id: network.id,
-                                message_type: 0,
-                                action_map: *action_map,
-                                transform: Transform::default(),
-                            });
-                        }
-                    }
-                    {
-                        let (_entities, transforms, networks): (
-                            Entities,
-                            ReadStorage<Transform>,
-                            ReadStorage<Network>,
-                        ) = self.game.world.system_data();
-                        for (_entity, transform, network) in
-                            (&_entities, &transforms, &networks).join()
-                        {
-                            self.network_context.send_queue.push(NetworkMessage {
-                                id: network.id,
-                                message_type: 1,
-                                action_map: MarineActionMap::default(),
-                                transform: *transform,
-                            });
-                        }
-                    }
-
-                    send_events_to_clients(
-                        &mut self.network_context.sender,
-                        &mut self.network_context.send_queue,
-                        &mut self.network_context.ips_lock,
-                    );
-                } else {
-                    {
-                        let (entities, players, action_maps, networks): (
-                            Entities,
-                            ReadStorage<Player>,
-                            ReadStorage<MarineActionMap>,
-                            ReadStorage<Network>,
-                        ) = self.game.world.system_data();
-                        for (_entity, _player, action_map, network) in
-                            (&entities, &players, &action_maps, &networks).join()
-                        {
-                            self.network_context.send_queue.push(NetworkMessage {
-                                id: network.id,
-                                message_type: 0,
-                                action_map: *action_map,
-                                transform: Transform::default(),
-                            });
-                        }
-                    }
-                    {
-                        let (entities, players, transforms, networks): (
-                            Entities,
-                            ReadStorage<Player>,
-                            ReadStorage<Transform>,
-                            ReadStorage<Network>,
-                        ) = self.game.world.system_data();
-                        for (_entity, _player, transform, network) in
-                            (&entities, &players, &transforms, &networks).join()
-                        {
-                            self.network_context.send_queue.push(NetworkMessage {
-                                id: network.id,
-                                message_type: 1,
-                                action_map: MarineActionMap::default(),
-                                transform: *transform,
-                            });
-                        }
-                    }
-
-                    send_events_to_ip(
-                        &mut self.network_context.sender,
-                        &mut self.network_context.send_queue,
-                        network::SERVER.parse().unwrap(),
-                    );
-                }
-            }
-        }
-
         Ok(())
     }
 
