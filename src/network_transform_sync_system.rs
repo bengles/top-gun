@@ -12,11 +12,10 @@ impl<'a> System<'a> for NetworkTransformSyncSystem {
     );
 
     fn run(&mut self, (players, networks, mut transforms, network_messages): Self::SystemData) {
-        for ((), _network, transform) in (!&players, &networks, &mut transforms).join() {
+        for ((), network, transform) in (!&players, &networks, &mut transforms).join() {
             for message in network_messages.iter() {
-                if message.message_type == 1 {
-                    let network_transform: Transform =
-                        serde_json::from_str(&message.payload).unwrap();
+                if message.message_type == 1 && network.id == message.id {
+                    let network_transform: Transform = message.transform;
                     transform.position = network_transform.position;
                     transform.rotation = network_transform.rotation;
                 }

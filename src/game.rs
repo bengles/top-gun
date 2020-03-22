@@ -47,16 +47,16 @@ impl<'a, 'b> Game<'a, 'b> {
             .with(MuzzleFlashSystem, "muzzle_flash_system", &[])
             .with(ScrollSystem, "scroll_system", &[])
             .with(AiMarineActionSystem, "ai_marine_action_system", &[])
-            .with(
-                NetworkMarineActionSystem,
-                "network_marine_action_system",
-                &[],
-            )
-            .with(
-                NetworkTransformSyncSystem,
-                "network_transform_sync_system",
-                &[],
-            )
+            // .with(
+            //     NetworkMarineActionSystem,
+            //     "network_marine_action_system",
+            //     &[],
+            // )
+            // .with(
+            //     NetworkTransformSyncSystem,
+            //     "network_transform_sync_system",
+            //     &[],
+            // )
             .build();
 
         Game {
@@ -73,7 +73,6 @@ impl<'a, 'b> Game<'a, 'b> {
     pub fn update(&mut self) {
         // update loop of the game.
         self.world.insert(self.input.clone());
-        self.world.insert(self.network_messages.clone());
 
         match self.state {
             GameState::Init => self.init(),
@@ -132,7 +131,11 @@ impl Game<'_, '_> {
 
         // Player
         let id = if self.is_host { 0 } else { 1 };
-        let sprite = if self.is_host { SpriteType::Player2 } else { SpriteType::Player1 };
+        let sprite = if self.is_host {
+            SpriteType::Player2
+        } else {
+            SpriteType::Player1
+        };
         self.world
             .create_entity()
             .with(Transform {
@@ -169,7 +172,11 @@ impl Game<'_, '_> {
 
         // Enemy
         let id = if self.is_host { 1 } else { 0 };
-        let sprite = if self.is_host { SpriteType::Player1 } else { SpriteType::Player2 };
+        let sprite = if self.is_host {
+            SpriteType::Player1
+        } else {
+            SpriteType::Player2
+        };
         self.world
             .create_entity()
             .with(Transform {
