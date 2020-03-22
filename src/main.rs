@@ -1,12 +1,15 @@
+use crossbeam_channel::*;
 use ggez::event::KeyCode;
 use ggez::event::KeyMods;
 use ggez::event::MouseButton;
 use ggez::event::{self, EventHandler};
 use ggez::{graphics, Context, ContextBuilder, GameResult};
+use serde::{Deserialize, Serialize};
 use specs::Entities;
 use specs::World;
 use specs::WriteStorage;
 use specs::{join::Join, ReadStorage};
+use std::collections::*;
 
 mod ai_marine_action_system;
 mod assets;
@@ -16,6 +19,9 @@ mod input;
 mod input_to_marine_action_system;
 mod marine_action_system;
 mod muzzle_flash_system;
+mod network;
+mod network_marine_action_system;
+mod network_transform_sync_system;
 mod physics_system;
 mod scroll_system;
 mod utils;
@@ -28,16 +34,21 @@ use input::*;
 use input_to_marine_action_system::*;
 use marine_action_system::*;
 use muzzle_flash_system::*;
+use network::*;
+use network_marine_action_system::*;
+use network_transform_sync_system::*;
 use scroll_system::*;
 use utils::*;
 
 // Define usual 2d data structs.
-pub type Point2 = ggez::nalgebra::Point2<f32>;
-pub type Vector2 = ggez::nalgebra::Vector2<f32>;
-pub type Matrix4 = ggez::nalgebra::Matrix4<f32>;
+pub type Point2 = nalgebra::Point2<f32>;
+pub type Vector2 = nalgebra::Vector2<f32>;
+pub type Matrix4 = nalgebra::Matrix4<f32>;
 
 pub mod game;
 use game::*;
+
+use std::thread;
 
 fn main() {
     let (mut ctx, mut event_loop) = ContextBuilder::new("my_game", "Cool Game Author")
@@ -77,15 +88,27 @@ struct TopGun<'a, 'b> {
     pub game: Game<'a, 'b>,
     pub input: Input,
     pub screen_to_world: Matrix4,
+    pub network_context: NetworkContext,
 }
 
 impl<'a, 'b> TopGun<'a, 'b> {
     pub fn new(ctx: &mut Context) -> TopGun<'a, 'b> {
         let assets = Assets::load_assets(ctx);
+
+        let mut args = std::env::args();
+        let is_host = args.len() > 1 && args.nth(1).unwrap().starts_with("h");
+
+        if is_host {
+            println!("Starting host...");
+        } else {
+            println!("Starting client...");
+        }
+
         TopGun {
-            game: Game::new(assets),
+            game: Game::new(assets, is_host),
             input: Input::default(),
             screen_to_world: Matrix4::identity(),
+            network_context: NetworkContext::new(is_host),
         }
     }
 
@@ -176,6 +199,15 @@ impl<'a, 'b> TopGun<'a, 'b> {
 
 impl<'a, 'b> EventHandler for TopGun<'a, 'b> {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
+        // Lock received messages, copy them and put into world.
+        {
+            let mut received_messages = self.network_context.received_messages_lock.lock().unwrap();
+            let messages = (*received_messages).clone();
+
+            (*received_messages).clear();
+            self.game.world.insert(messages);
+        }
+
         self.update_view_matrix(ctx);
         self.input.dt = ggez::timer::delta(ctx).as_secs_f32();
         let screen_size = graphics::size(ctx);
@@ -185,6 +217,99 @@ impl<'a, 'b> EventHandler for TopGun<'a, 'b> {
         self.game.update();
         self.input.reset();
         self.draw_sprites(ctx);
+
+        {
+            self.network_context.frequency -= self.input.dt;
+            if self.network_context.frequency < 0.0 {
+                self.network_context.frequency = NetworkContext::FREQUENCY;
+                if self.network_context.is_host {
+                    {
+                        let (_entities, action_maps, networks): (
+                            Entities,
+                            ReadStorage<MarineActionMap>,
+                            ReadStorage<Network>,
+                        ) = self.game.world.system_data();
+                        for (_entity, action_map, network) in
+                            (&_entities, &action_maps, &networks).join()
+                        {
+                            self.network_context.send_queue.push(NetworkMessage {
+                                id: network.id,
+                                message_type: 0,
+                                action_map: *action_map,
+                                transform: Transform::default(),
+                            });
+                        }
+                    }
+                    {
+                        let (_entities, transforms, networks): (
+                            Entities,
+                            ReadStorage<Transform>,
+                            ReadStorage<Network>,
+                        ) = self.game.world.system_data();
+                        for (_entity, transform, network) in
+                            (&_entities, &transforms, &networks).join()
+                        {
+                            self.network_context.send_queue.push(NetworkMessage {
+                                id: network.id,
+                                message_type: 1,
+                                action_map: MarineActionMap::default(),
+                                transform: *transform,
+                            });
+                        }
+                    }
+
+                    send_events_to_clients(
+                        &mut self.network_context.sender,
+                        &mut self.network_context.send_queue,
+                        &mut self.network_context.ips_lock,
+                    );
+                } else {
+                    {
+                        let (entities, players, action_maps, networks): (
+                            Entities,
+                            ReadStorage<Player>,
+                            ReadStorage<MarineActionMap>,
+                            ReadStorage<Network>,
+                        ) = self.game.world.system_data();
+                        for (_entity, _player, action_map, network) in
+                            (&entities, &players, &action_maps, &networks).join()
+                        {
+                            self.network_context.send_queue.push(NetworkMessage {
+                                id: network.id,
+                                message_type: 0,
+                                action_map: *action_map,
+                                transform: Transform::default(),
+                            });
+                        }
+                    }
+                    {
+                        let (entities, players, transforms, networks): (
+                            Entities,
+                            ReadStorage<Player>,
+                            ReadStorage<Transform>,
+                            ReadStorage<Network>,
+                        ) = self.game.world.system_data();
+                        for (_entity, _player, transform, network) in
+                            (&entities, &players, &transforms, &networks).join()
+                        {
+                            self.network_context.send_queue.push(NetworkMessage {
+                                id: network.id,
+                                message_type: 1,
+                                action_map: MarineActionMap::default(),
+                                transform: *transform,
+                            });
+                        }
+                    }
+
+                    send_events_to_ip(
+                        &mut self.network_context.sender,
+                        &mut self.network_context.send_queue,
+                        network::SERVER.parse().unwrap(),
+                    );
+                }
+            }
+        }
+
         Ok(())
     }
 
@@ -212,6 +337,7 @@ impl<'a, 'b> EventHandler for TopGun<'a, 'b> {
             _ => None,
         };
     }
+
     fn mouse_button_up_event(&mut self, _ctx: &mut Context, button: MouseButton, _x: f32, _y: f32) {
         match button {
             MouseButton::Left => self.input.keys_up.insert(Key::Mouse1, true),
