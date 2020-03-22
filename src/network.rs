@@ -3,8 +3,8 @@ use laminar::{Packet, Socket, SocketEvent};
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 
-pub const SERVER: &str = "127.0.0.1:12351";
-const CLIENT: &str = "127.0.0.1:12352";
+pub const SERVER: &str = "0.0.0.0:12351";
+const CLIENT: &str = "0.0.0.0:12352";
 
 pub fn receive_thread(
     receiver: Receiver<SocketEvent>,
@@ -21,8 +21,9 @@ pub fn receive_thread(
                     let mut ip_lock = ips.lock().unwrap();
                     let msg = packet.payload();
                     ip_lock.insert(packet.addr());
-                    let message = serde_json::from_str(&String::from_utf8_lossy(msg)).unwrap();
-                    messages.push(message);
+                    if let Ok(message) = serde_json::from_str(&String::from_utf8_lossy(msg)) {
+                        messages.push(message);
+                    }
                 }
                 SocketEvent::Timeout(_) => {
                     println!("TIMEOUT");
