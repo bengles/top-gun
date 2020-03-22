@@ -14,15 +14,13 @@ pub struct Game<'a, 'b> {
     pub dispatcher: Dispatcher<'a, 'b>,
     pub assets: Assets,
     pub input: Input,
-    pub network_messages: Vec<NetworkMessage>,
-    pub is_host: bool,
+    pub network_context: NetworkContext,
 }
 
 impl<'a, 'b> Game<'a, 'b> {
-    pub fn new(assets: Assets, is_host: bool) -> Game<'a, 'b> {
+    pub fn new(assets: Assets) -> Game<'a, 'b> {
         // use this to initalize the game struct.
         let mut world = World::new();
-
         world.register::<Transform>();
         world.register::<RigidBody>();
         world.register::<Collider>();
@@ -59,19 +57,29 @@ impl<'a, 'b> Game<'a, 'b> {
             )
             .build();
 
+        let mut args = std::env::args();
+        let is_host = args.len() == 2 && args.nth(1).unwrap().starts_with("h");
+
+        if is_host {
+            println!("Starting host...");
+        } else {
+            println!("Starting client...");
+        }
+
         Game {
             state: GameState::Init,
             world: world,
             dispatcher: dispatcher,
             assets: assets,
             input: Input::default(),
-            network_messages: vec![],
-            is_host: is_host,
+            network_context: NetworkContext::new(is_host),
         }
     }
 
     pub fn update(&mut self) {
         // update loop of the game.
+        let network_messages = self.network_context.fetch_messages();
+        self.world.insert(network_messages);
         self.world.insert(self.input.clone());
 
         match self.state {
@@ -80,6 +88,26 @@ impl<'a, 'b> Game<'a, 'b> {
         }
 
         self.world.maintain();
+
+        self.network_context.frequency -= self.input.dt;
+        if self.network_context.frequency < 0.0 {
+            self.network_context.frequency = NetworkContext::FREQUENCY;
+            // collect and send
+            self.network_context.fill_send_queue(&mut self.world);
+            if self.network_context.is_host {
+                network::send_events_to_clients(
+                    &mut self.network_context.sender,
+                    &mut self.network_context.send_queue,
+                    &mut self.network_context.ips_lock,
+                );
+            } else {
+                network::send_events_to_ip(
+                    &mut self.network_context.sender,
+                    &mut self.network_context.send_queue,
+                    network::SERVER.parse().unwrap(),
+                );
+            }
+        }
     }
 }
 
@@ -130,8 +158,8 @@ impl Game<'_, '_> {
             .build();
 
         // Player
-        let id = if self.is_host { 0 } else { 1 };
-        let sprite = if self.is_host {
+        let id = if self.network_context.is_host { 0 } else { 1 };
+        let sprite = if self.network_context.is_host {
             SpriteType::Player2
         } else {
             SpriteType::Player1
@@ -171,8 +199,8 @@ impl Game<'_, '_> {
             .build();
 
         // Enemy
-        let id = if self.is_host { 1 } else { 0 };
-        let sprite = if self.is_host {
+        let id = if self.network_context.is_host { 1 } else { 0 };
+        let sprite = if self.network_context.is_host {
             SpriteType::Player1
         } else {
             SpriteType::Player2

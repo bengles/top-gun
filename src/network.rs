@@ -21,8 +21,9 @@ pub fn receive_thread(
                     let mut ip_lock = ips.lock().unwrap();
                     let msg = packet.payload();
                     ip_lock.insert(packet.addr());
-                    let message = serde_json::from_str(&String::from_utf8_lossy(msg)).unwrap();
-                    messages.push(message);
+                    if let Ok(message) = serde_json::from_str(&String::from_utf8_lossy(msg)) {
+                        messages.push(message);
+                    }
                 }
                 SocketEvent::Timeout(_) => {
                     println!("TIMEOUT");
@@ -116,6 +117,77 @@ impl NetworkContext {
             ips_lock: ips_lock,
             received_messages_lock: received_messages_lock,
             sender: sender,
+        }
+    }
+
+    pub fn fetch_messages(&mut self) -> Vec<NetworkMessage> {
+        let mut received_messages = self.received_messages_lock.lock().unwrap();
+        let messages = (*received_messages).clone();
+        (*received_messages).clear();
+        messages
+    }
+
+    pub fn fill_send_queue(&mut self, world: &mut World) {
+        if self.is_host {
+            let (_entities, action_maps, networks): (
+                Entities,
+                ReadStorage<MarineActionMap>,
+                ReadStorage<Network>,
+            ) = world.system_data();
+            for (_entity, action_map, network) in (&_entities, &action_maps, &networks).join() {
+                self.send_queue.push(NetworkMessage {
+                    id: network.id,
+                    message_type: 0,
+                    action_map: *action_map,
+                    transform: Transform::default(),
+                });
+            }
+            let (_entities, transforms, networks): (
+                Entities,
+                ReadStorage<Transform>,
+                ReadStorage<Network>,
+            ) = world.system_data();
+            for (_entity, transform, network) in (&_entities, &transforms, &networks).join() {
+                self.send_queue.push(NetworkMessage {
+                    id: network.id,
+                    message_type: 1,
+                    action_map: MarineActionMap::default(),
+                    transform: *transform,
+                });
+            }
+        } else {
+            let (entities, players, action_maps, networks): (
+                Entities,
+                ReadStorage<Player>,
+                ReadStorage<MarineActionMap>,
+                ReadStorage<Network>,
+            ) = world.system_data();
+            for (_entity, _player, action_map, network) in
+                (&entities, &players, &action_maps, &networks).join()
+            {
+                self.send_queue.push(NetworkMessage {
+                    id: network.id,
+                    message_type: 0,
+                    action_map: *action_map,
+                    transform: Transform::default(),
+                });
+            }
+            let (entities, players, transforms, networks): (
+                Entities,
+                ReadStorage<Player>,
+                ReadStorage<Transform>,
+                ReadStorage<Network>,
+            ) = world.system_data();
+            for (_entity, _player, transform, network) in
+                (&entities, &players, &transforms, &networks).join()
+            {
+                self.send_queue.push(NetworkMessage {
+                    id: network.id,
+                    message_type: 1,
+                    action_map: MarineActionMap::default(),
+                    transform: *transform,
+                });
+            }
         }
     }
 }
