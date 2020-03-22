@@ -96,7 +96,7 @@ impl<'a, 'b> TopGun<'a, 'b> {
         let assets = Assets::load_assets(ctx);
 
         let mut args = std::env::args();
-        let is_host = args.len() > 1 && args.nth(1).unwrap().starts_with("h");
+        let is_host = args.len() == 2 && args.nth(1).unwrap().starts_with("h");
 
         if is_host {
             println!("Starting host...");
